@@ -1,0 +1,255 @@
+#!/usr/bin/env bash
+#
+# Created:        Do 2023-03-16 12:35:18 CET
+# Last Modified:  So 2023-03-19 10:23:52 CET
+#
+# watermark:
+#   Add a watermark to a certain position in a media file.
+
+usage () {
+cat << EOF
+
+Usage: watermark [options] <watermark> <infile> [..]
+
+OPTIONS:
+   -a <anchor>  Set anchor of watermark (default: ne)
+   -s <number>  Scale watermark according to large dimension of media file (default: 0)
+   -m <pixel>   Set margin around watermark (default: 0)
+   -y           Overwrite existing files
+   -h           Show this help message
+EOF
+}
+
+# Initialization
+FFMPEG=$(command -v ffmpeg)
+FFPROBE=$(command -v ffprobe)
+
+# Check if ffmpeg is available
+if [ ! -x "${FFMPEG}" ]
+then
+    echo "$0: ffmpeg not found, probably not installed"
+    exit 1
+fi
+
+# Check if ffprobe is available
+if [ ! -x "${FFPROBE}" ]
+then
+    echo "$0: ffprobe not found, probably not installed"
+    exit 1
+fi
+
+# Defaults
+ANCHOR=ne
+SCALOP=0
+MARGIN=0
+YES=0
+
+# Process options
+while getopts "a:s:m:yh" OPTION
+do
+    case "${OPTION}"
+    in
+        a) ANCHOR="${OPTARG}"
+           ;;
+        s) SCALOP="${OPTARG}"
+           ;;
+        m) MARGIN="${OPTARG}"
+           ;;
+        y) YES=1
+           ;;
+        h) usage
+           exit 0
+           ;;
+       \?) usage
+           exit 1
+           ;;
+    esac
+done
+
+# Skip options and shift index
+shift $((OPTIND-1))
+
+# Check number of arguments
+if [ $# -lt 2 ]
+then
+    echo "$0: Expecting at least 2 arguments"
+    exit 1
+fi
+
+# Get watermark file
+WMFILE=$1
+shift
+
+# Check if watermark is a valid file
+if [ ! -f "${WMFILE}" ]
+then
+    echo "$0: ${WMFILE} is not a valid file"
+    exit 1
+fi
+
+# Get dimensions of watermark file
+WMSIZE=$(${FFPROBE} -v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 "${WMFILE}")
+if [ $? -ne 0 ]
+then
+    echo "$0: Failed to fetch dimensions of ${WMFILE}"
+    exit 1
+fi
+
+# Get width and height
+WMSIZE_W="${WMSIZE%x*}"
+WMSIZE_H="${WMSIZE#*x}"
+
+# Loop as long as there are input files
+while [ $# -gt 0 ]
+do
+
+    # Get input file
+    INFILE=$1
+    shift
+
+    # Check if video is a valid file
+    if [ ! -f "${INFILE}" ]
+    then
+        echo "$0: ${INFILE} is not a valid file, skipped"
+        continue
+    fi
+
+    # Get dimensions of input file
+    INSIZE=$(${FFPROBE} -v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 "${INFILE}")
+    if [ $? -ne 0 ]
+    then
+        echo "$0: Failed to fetch dimensions of ${INFILE}, skipped"
+        continue
+    fi
+
+    # Get width and height
+    INSIZE_W="${INSIZE%x*}"
+    INSIZE_H="${INSIZE#*x}"
+
+    # Check scaling operator SCALOP
+    if [ 1 -eq "$(echo "0.0 > ${SCALOP}" | bc)" ]
+    then
+
+        # SCALOP is negative
+        echo "$0: Negative scale value: ${SCALOP}"
+        exit 1
+
+    elif [ 1 -eq "$(echo "0.0 == ${SCALOP}" | bc)" ]
+    then
+
+        # SCALOP is zero
+        if [ "$(echo "${WMSIZE_W}+2*${MARGIN}" | bc)" -gt "${INSIZE_W}" ] || \
+           [ "$(echo "${WMSIZE_H}+2*${MARGIN}" | bc)" -gt "${INSIZE_H}" ]
+        then
+            echo "$0: Watermark size exceeds size of input file ${INFILE}, skipped"
+            continue
+        fi
+        # Set scaling operator that does not change size
+        SCALE="${WMSIZE_W}:${WMSIZE_H}"
+
+    elif [ 1 -eq "$(echo "${SCALOP} < 1.0" | bc)" ]
+    then
+
+        # SCALOP is smaller than 1.0
+        if [ "${INSIZE_W}" -gt "${INSIZE_H}" ]
+        then
+            SCALE="$(echo "(${SCALOP}*${INSIZE_W})/1" | bc):-1"
+        else
+            SCALE="-1:$(echo "(${SCALOP}*${INSIZE_H})/1" | bc)"
+        fi
+
+    else
+
+        # SCALOP is larger than or equal 1.0
+        if [ "${INSIZE_W}" -gt "${INSIZE_H}" ]
+        then
+            if [ "${SCALOP}" -gt "${INSIZE_W}" ]
+            then
+                echo "$0: Target watermark size exceeds width of input file ${INFILE}, skipped"
+                continue
+            fi
+            SCALE="${SCALOP}:-1"
+        else
+            if [ "${SCALOP}" -gt "${INSIZE_H}" ]
+            then
+                echo "$0: Target watermark size exceeds height of input file ${INFILE}, skipped"
+                continue
+            fi
+            SCALE="-1:${SCALOP}"
+        fi
+    fi
+
+    # Set filename of output file
+    tmp=$(basename -- "$INFILE")
+    OUTFILE="${tmp%.*}-watermark.${tmp##*.}"
+
+    # Do not write output file if it already exists
+    if [ -f "${OUTFILE}" ] && [ $YES -ne 1 ]
+    then
+        echo "$0: ${OUTFILE} already exists, skipped"
+        continue
+    fi
+
+    # Place watermark according to anchor descriptor
+    if [[ "${ANCHOR}" =~ ^(c|center)$ ]]
+    then
+
+        # Center
+        ${FFMPEG} -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE} [wm];[0][wm]overlay=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/2" "${OUTFILE}"
+
+    elif [[ "${ANCHOR}" =~ ^(n|north)$ ]]
+    then
+
+        # North
+        ${FFMPEG} -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE} [wm];[0][wm]overlay=x=(main_w-overlay_w)/2:y=${MARGIN}" "${OUTFILE}"
+
+    elif [[ "${ANCHOR}" =~ ^(s|south)$ ]]
+    then
+
+        # South
+        ${FFMPEG} -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE} [wm];[0][wm]overlay=x=(main_w-overlay_w)/2:y=main_h-overlay_h-${MARGIN}" "${OUTFILE}"
+
+    elif [[ "${ANCHOR}" =~ ^(e|east)$ ]]
+    then
+
+        # East
+        ${FFMPEG} -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE} [wm];[0][wm]overlay=x=main_w-overlay_w-${MARGIN}:y=(main_h-overlay_h)/2" "${OUTFILE}"
+
+    elif [[ "${ANCHOR}" =~ ^(w|west)$ ]]
+    then
+
+        # West
+        ${FFMPEG} -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE} [wm];[0][wm]overlay=x=${MARGIN}:y=(main_h-overlay_h)/2" "${OUTFILE}"
+
+    elif [[ "${ANCHOR}" =~ ^(nw|northwest)$ ]]
+    then
+
+        # Northwest
+        ${FFMPEG} -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE} [wm];[0][wm]overlay=x=${MARGIN}:y=${MARGIN}" "${OUTFILE}"
+
+    elif [[ "${ANCHOR}" =~ ^(ne|northeast)$ ]]
+    then
+
+        # Northeast
+        ${FFMPEG} -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE} [wm];[0][wm]overlay=x=main_w-overlay_w-${MARGIN}:y=${MARGIN}" "${OUTFILE}"
+
+    elif [[ "${ANCHOR}" =~ ^(sw|southwest)$ ]]
+    then
+
+        # Southwest
+        ${FFMPEG} -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE} [wm];[0][wm]overlay=x=${MARGIN}:y=main_h-overlay_h-${MARGIN}" "${OUTFILE}"
+
+    elif [[ "${ANCHOR}" =~ ^(se|southeast)$ ]]
+    then
+
+        # Southeast
+        ${FFMPEG} -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE} [wm];[0][wm]overlay=x=main_w-overlay_w-${MARGIN}:y=main_h-overlay_h-${MARGIN}" "${OUTFILE}"
+
+    else
+
+        echo "$0: Anchor '${ANCHOR}' unknown"
+        exit 2
+
+    fi
+
+done

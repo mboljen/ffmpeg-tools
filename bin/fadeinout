@@ -1,0 +1,182 @@
+#!/usr/bin/env bash
+#
+# Created:         So 2020-06-28 10:29:34 CEST
+# Last Modified:   So 2021-01-24 18:40:09 CET
+#
+# fadeinout:
+#    This script will add a fade-in and fade-out effect to the given video
+#    using ffmpeg.
+
+# Help text
+usage() {
+cat << EOF
+
+Usage: fadeinout [options] <file>
+
+OPTIONS:
+   -t <sec>    Fade duration in seconds (default: 5)
+   -m <flag>   Fade-in only (i), fade-out only (o), both (default:b)
+   -s <flag>   Video stream only (v), audio stream only (a), both (default:b)
+   -n <text>   File basename suffix (default: "_fadeinout")
+   -y          Overwrite existing files
+   -h          Show this message
+EOF
+}
+
+# Defaults
+FADEDUR=5
+MODE="b"
+STREAM="b"
+YES=0
+NAME="_$(basename $0)"
+FFMPEG=$(command -v ffmpeg)
+FFPROBE=$(command -v ffprobe)
+
+# Process options
+while getopts "t:m:s:n:yh" OPTION
+do
+    case "${OPTION}"
+    in
+        t)
+            FADEDUR="${OPTARG}"
+            ;;
+        m)
+            MODE="${OPTARG}"
+            ;;
+        s)
+            STREAM="${OPTARG}"
+            ;;
+        n)
+            NAME="${OPTARG}"
+            ;;
+        y)
+            YES=1
+            ;;
+        h|\?)
+            usage
+            exit 0
+            ;;
+    esac
+done
+
+# Check if ffmpeg is available
+if [ ! -x "${FFMPEG}" ]
+then
+    echo "$0: ffmpeg not found, probably not installed"
+    exit 1
+fi
+
+# Check if ffprobe is available
+if [ ! -x "${FFPROBE}" ]
+then
+    echo "$0: ffprobe not found, probably not installed"
+    exit 1
+fi
+
+# Check FADEDUR being a positive floating point number
+result=$(echo "scale=2;${FADEDUR}" | bc -q 2>/dev/null)
+stat=$?
+if [[ "$stat" -eq 0 && -z "$result" ]]
+then
+    echo "Fade duration not a floating point number: ${FADEDUR}"
+    exit 1
+elif (( $(echo "${FADEDUR} < 0" | bc -l) ))
+then
+    echo "Fade duration not positive: ${FADEDUR}"
+    exit 1
+fi
+
+# Check MODE flag
+if [ "${MODE}" != "b" ] && [ "${MODE}" != "i" ] && [ "${MODE}" != "o" ]
+then
+    echo "Invalid mode: ${MODE}"
+    exit 1
+fi
+
+# Check STREAM flag
+if [ "${STREAM}" != "b" ] && [ "${STREAM}" != "v" ] && [ "${STREAM}" != "a" ]
+then
+    echo "Invalid stream: ${STREAM}"
+    exit 1
+fi
+
+# Skip options and shift index
+shift $((OPTIND-1))
+
+# Loop over input files
+for f in "$@"
+do
+    # Check if file exists
+    if ! [ -f "${f}" ]
+    then
+        echo "Skipping ${f}, file does not exist"
+        continue
+    fi
+
+    # Fetch duration of video and calculate offset
+    DUR=$(ffprobe -loglevel error -show_entries format=duration -of default=nk=1:nw=1 "$f")
+    OFFSET=$(bc -l <<< "${DUR}"-"${FADEDUR}")
+
+    # Check OFFSET not being negative
+    if (( $(echo "${OFFSET} < 0" | bc -l) ))
+    then
+        echo "Skipping ${f}, negative offset ${OFFSET} ..."
+        continue
+    fi
+
+    # Assemble output filename
+    FNAME=$(rev <<< "$f" | cut -d. -f2- | rev)
+    FEXT=$(rev <<< "$f" | cut -d. -f1 | rev)
+    FNEW="${FNAME}${NAME}.${FEXT}"
+
+    # Skip ffmpeg if output file exists
+    if [ -f "${FNEW}" ] && [ ${YES} -eq 0 ]
+    then
+        echo "Skipping ${f}, output file ${FNEW} exists"
+        continue
+    fi
+
+    # Assemble settings for ffmpeg
+    FILTER=''
+    MAP=()
+
+    # Check if video fade is required
+    if [ "${STREAM}" != 2 ]
+    then
+        #
+        TMP=''
+        #
+        [ "${MODE}" != 2 ] && TMP+="${TMP:+,}fade=t=in:st=0:d=${FADEDUR}"
+        [ "${MODE}" != 1 ] && TMP+="${TMP:+,}fade=t=out:st=${OFFSET}:d=${FADEDUR}"
+        #
+        FILTER+="[0:v]${TMP}[v]"
+        MAP+=(-map '[v]')
+    else
+        # Copy video stream
+        MAP+=(-map 0:v -c:v copy)
+    fi
+
+    # Check if audio fade is required
+    if [ "${STREAM}" != 1 ]
+    then
+        #
+        TMP=''
+        #
+        [ "${MODE}" != 2 ] && TMP+="${TMP:+,}afade=t=in:st=0:d=${FADEDUR}"
+        [ "${MODE}" != 1 ] && TMP+="${TMP:+,}afade=t=out:st=${OFFSET}:d=${FADEDUR}"
+        #
+        FILTER+="${FILTER:+;}[0:a]${TMP}[a]"
+        MAP+=(-map '[a]')
+    else
+        # Copy audio stream
+        MAP+=(-map 0:a -c:a copy)
+    fi
+
+    # Assemble command line
+    CMDLINE=(ffmpeg -y -i "${f}" -filter_complex "${FILTER}" "${MAP[@]}" "${FNEW}")
+    echo -e "\n[" "${CMDLINE[@]}" "]\n"
+
+    # Execute ffmpeg
+    "${CMDLINE[@]}"
+
+done

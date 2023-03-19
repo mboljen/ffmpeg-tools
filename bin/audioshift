@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+#
+# Created:         Mo 2019-08-26 11:18:48 CEST
+# Last Modified:   So 2021-01-31 11:23:27 CET
+#
+# audioshift:
+#   Delays the audio or video stream of a video file.
+
+# Help text
+usage() {
+cat << EOF
+
+Usage: audioshift [options] <inputfile>
+
+OPTIONS:
+   -a <time>   Delay audio track (seconds)
+   -v <time>   Delay video track (seconds)
+   -h          Show this help message
+EOF
+}
+
+# Initialization
+FFMPEG=$(command -v ffmpeg)
+TIME=0.0
+
+# Process options
+while getopts "h?a:v:" OPTION
+do
+    case "${OPTION}"
+    in
+        a)  TIME="${OPTARG}"
+            MAP="-map 0:v -map 1:a"
+            echo "Audio track will be delayed by ${TIME}"
+            ;;
+        v)  TIME="${OPTARG}"
+            MAP="-map 1:v -map 0:a"
+            echo "Video track will be delayed by ${TIME}"
+            ;;
+        h|\?)
+            usage
+            exit 0
+            ;;
+    esac
+done
+
+# Check availability of converter
+if [ ! -x "${FFMPEG}" ]
+then
+    echo "ffmpeg not found, probably not installed"
+    exit 1
+fi
+
+# Require offset to be non-zero
+if (( $( echo "${TIME} == 0" | bc -l ) ))
+then
+    echo "Offset is zero, nothing to be done"
+    exit 0
+fi
+
+# Skip options and shift index
+shift $((OPTIND-1))
+
+# Convert input files
+for INFILE in "$@"
+do
+    # Check if file exists
+    if [ -f "${INFILE}" ]
+    then
+
+        # Show status
+        echo -e "\n### Processing ${INFILE} ... please wait ...\n"
+
+        # Process file
+        ${FFMPEG} -y -i "${INFILE}" -itsoffset "${TIME}" -i "${INFILE}" "${MAP}" -vcodec copy -acodec copy "${INFILE%.*}-audioshift.${INFILE##*.}"
+
+    else
+
+        # Show warning
+        echo -e "\n### Skipping ${INFILE} ... not found\n"
+
+    fi
+
+done

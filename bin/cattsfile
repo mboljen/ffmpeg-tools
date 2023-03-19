@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+#
+# Created:        Do 16 Jul 2020 02:00:30  CEST
+# Last modified:  Do 16 Jul 2020 02:00:30  CEST
+#
+# cattsfile:
+#    Concatenate multiple TS video files using ffmpeg
+
+# Help text
+usage() {
+cat << EOF
+
+Usage: cattsfile <file1> ... <outfile>
+
+OPTIONS:
+  -y   Overwrite existing files
+  -h   Show this help message
+EOF
+}
+
+# Initialization
+FFMPEG=$(command -v ffmpeg)
+YES=0
+
+# Process options
+while getopts "yh" OPTION
+do
+    case "${OPTION}"
+    in
+        y)
+            YES=1
+            ;;
+        h|\?)
+            usage
+            exit 0
+            ;;
+    esac
+done
+
+# Check availability of ffmpeg
+if ! [ -x "${FFMPEG}" ]
+then
+    echo "ffmpeg not found, probably not installed"
+    exit 1
+fi
+
+# Skip options and shift index
+shift $((OPTIND-1))
+
+# Check number of arguments
+if [ "$#" -lt 2 ]
+then
+    echo "$0 requires at least 3 arguments"
+    usage
+    exit 1
+fi
+
+# Get last argument
+OUTFILE="${!#}"
+
+# Check if output file exists
+if [ -f "${OUTFILE}" ] && [ "${YES}" -eq 0 ]
+then
+    echo "Outfile \"${OUTFILE}\" already exists"
+    exit 1
+fi
+
+# Loop over arguments
+OPT=""
+for (( i = 1; i < $#; ++i ))
+do
+    # Check if file exists
+    if [ ! -f "${!i}" ]
+    then
+        echo "Input file \"${!i}\" does not exist"
+        exit 1
+    fi
+    # Append current filename to options string
+    [ "$i" -gt 1 ] && OPT+="|"
+    OPT+="${!i}"
+done
+
+# Invoke ffmpeg
+${FFMPEG} -y -i "concat:${OPT}" -c copy "${OUTFILE}"

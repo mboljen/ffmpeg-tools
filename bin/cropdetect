@@ -1,0 +1,188 @@
+#!/usr/bin/env bash
+#
+# Created:         Mo 2020-05-11 01:00:51 CEST
+# Last Modified:   So 2022-05-01 14:20:18 CEST
+#
+# cropdetect:
+#   This script detects crop margins of videos.
+
+# Help text
+usage () {
+cat << EOF
+
+Usage: cropdetect [options] <file>
+
+OPTIONS:
+  -s <time>    Skip time (default: 2% of total time)
+  -t <time>    Scan time (default: 5% of total time)
+  -c <string>  FFmpeg's cropdetect filter (limit:round:skip:reset)
+                  limit = black threshold (default: 24)
+                  round = output resolution divisor (default: 16)
+                  skip  = inital frames skipped (default: 2)
+                  reset = frames to restart detection process (default: 0)
+  -h           Show this help message
+EOF
+}
+
+# Initialization
+FFMPEG=$(command -v ffmpeg)
+FFPROBE=$(command -v ffprobe)
+
+# Defaults of ffmpeg's cropdetect option "<limit>:<round>:<skip>"
+CROPDETECT="24:16:2:0"
+
+# Process options
+while getopts "s:t:c:h" OPTION
+do
+    case "$OPTION"
+    in
+        s)  SS="$OPTARG"
+            ;;
+        t)  T="$OPTARG"
+            ;;
+        c)  CROPDETECT="$OPTARG"
+            ;;
+        h)  usage
+            exit 0
+            ;;
+        \?) usage
+            exit 1
+            ;;
+    esac
+done
+
+# Check if ffmpeg is available
+if [ ! -x "$FFMPEG" ]
+then
+    echo "$0: ffmpeg not found, probably not installed"
+    exit 1
+fi
+
+# Check if ffprobe is available
+if [ ! -x "$FFPROBE" ]
+then
+    echo "$0: ffprobe not found, probably not installed"
+    exit 1
+fi
+
+# Regular expressions for timestamps
+regex1='^[0-9]+(\.[0-9]+)?$'
+regex2='^[0-9]+:[0-5][0-9](\.[0-9]+)?$'
+regex3='^[0-9]+:([0-5][0-9]|2[0-3]):[0-5][0-9](\.[0-9]+)?$'
+
+# convert-a-duration-HHMMSS-to-seconds-in-bash
+# https://stackoverflow.com/questions/18149127/convert-a-duration-hhmmss-to-seconds-in-bash
+to_seconds () {
+    echo "$1" | awk -F':' '{if (NF == 1) { print $1 } else if (NF == 2) { print $1*60 + $2 } else if (NF == 3) { print $1*3600 + $2*60 + $3 }}'
+}
+
+# Pattern matching for SS
+if [[ "$SS" =~ $regex1 ]] || [[ "$SS" =~ $regex2 ]] || [[ "$SS" =~ $regex3 ]]
+then
+    # Convert HH:MM:SS.sss to seconds
+    SS=$(to_seconds "$SS")
+
+elif [ -n "$SS" ]
+then
+    # Invalid pattern match, SS is not null and not empty
+    echo "$0: Invalid skip time '$SS'"
+    exit 2
+fi
+
+# Pattern matching for T
+if [[ "$T" =~ $regex1 ]] || [[ "$T" =~ $regex2 ]] || [[ "$T" =~ $regex3 ]]
+then
+    # Convert HH:MM:SS.sss to seconds
+     T=$(to_seconds "$T")
+
+elif [ -n "$T" ]
+then
+    # Invalid pattern match, T is not null and not empty
+    echo "$0: Invalid scan time '$T'"
+    exit 3
+fi
+
+# Pattern matching for CROPDETECT
+if [[ ! "$CROPDETECT" =~ ^[0-9]+(((:[0-9]+)?:[0-9]+)?:[0-9]+)?$ ]]
+then
+    echo "$0: Invalid cropdetect value '$CROPDETECT'"
+    exit 4
+fi
+
+# Skip options and shift index
+shift $((OPTIND-1))
+
+# Loop over arguments
+while [ $# -gt 0 ]
+do
+
+    # get filename
+    infile="$1"
+    shift
+
+    # Skip file if not existing
+    if [ ! -f "$infile" ]
+    then
+        echo "$infile does not exist... skipped"
+        continue
+    fi
+
+    # Get duration of first video stream in seconds
+    dur=$($FFPROBE -i "$infile" -show_format -v quiet | sed -n 's/duration=//p')
+
+    # Check duration
+    if (( $(echo "$dur <= 0" | bc -l) ))
+    then
+        echo "$infile has non-positive duration $dur ... skipped"
+        continue
+    fi
+
+    # Auto-define timeframe
+    if [ -z "$SS" ] && [ -z "$T" ]
+    then
+
+        if (( $(echo "$dur <= 60"| bc -l) ))
+        then
+            # Use total length of clip if duration is less than 10 secs
+            T0=0
+            T1="$dur"
+        else
+            # Empty starting and termination time
+            T0=$(echo "$dur*0.02" | bc -l)
+            T1=$(echo "$dur*0.05" | bc -l)
+        fi
+
+    elif [ -z "$T" ]
+    then
+        # Empty termination time
+        T0="$SS"
+        T1=$(echo "$SS+$dur*0.03" | bc -l)
+
+    elif [ -z "$SS" ]
+    then
+        # Empty starting time
+        T0=$(echo "$T-$dur*0.03" | bc -l)
+        T1="$T"
+
+    else
+        # Defined starting and termination time
+        T0="$SS"
+        T1="$T"
+
+    fi
+
+    # Restrain start and end time
+    (( $(echo "$T1 < $dur" | bc -l) )) || T1="$dur"
+    (( $(echo "$T0 > 0"    | bc -l) )) || T0=0
+    (( $(echo "$T0 < $T1"  | bc -l) )) || T0=0
+
+    #echo "T0 = $T0"
+    #echo "T1 = $T1"
+
+    # Grep crop geometry
+    result=$($FFMPEG -i "$infile" -ss "$T0" -t "$T1" -vsync vfr -vf "fps=1/2,cropdetect=$CROPDETECT" -f null - 2>&1 | awk '/crop/ { print $NF }' | tr ' ' '\n' | sort | uniq -c | sort -n | tail -1 | awk '{ print $NF }')
+
+    # Check result string
+    [ -n "$result" ] && echo "$result" || exit 5
+
+done
