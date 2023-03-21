@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 #
 # Created:         Mo 2020-05-11 01:00:51 CEST
-# Last Modified:   So 2022-05-01 14:20:18 CEST
+# Last Modified:   Di 2023-03-21 11:32:27 CET
 #
-# cropdetect:
+# ffmpeg-cropdetect:
 #   This script detects crop margins of videos.
 
 # Help text
 usage () {
 cat << EOF
 
-Usage: cropdetect [options] <file>
+Usage: ffmpeg-cropdetect [options] <file>
 
 OPTIONS:
   -s <time>    Skip time (default: 2% of total time)
@@ -36,18 +36,18 @@ while getopts "s:t:c:h" OPTION
 do
     case "$OPTION"
     in
-        s)  SS="$OPTARG"
-            ;;
-        t)  T="$OPTARG"
-            ;;
-        c)  CROPDETECT="$OPTARG"
-            ;;
-        h)  usage
-            exit 0
-            ;;
-        \?) usage
-            exit 1
-            ;;
+        s) SS="$OPTARG"
+           ;;
+        t) T="$OPTARG"
+           ;;
+        c) CROPDETECT="$OPTARG"
+           ;;
+        h) usage
+           exit 0
+           ;;
+       \?) usage
+           exit 1
+           ;;
     esac
 done
 

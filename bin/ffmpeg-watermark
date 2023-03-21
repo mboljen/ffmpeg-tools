@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 #
 # Created:        Do 2023-03-16 12:35:18 CET
-# Last Modified:  So 2023-03-19 10:23:52 CET
+# Last Modified:  Di 2023-03-21 11:33:26 CET
 #
-# watermark:
+# ffmpeg-watermark:
 #   Add a watermark to a certain position in a media file.
 
 usage () {
 cat << EOF
 
-Usage: watermark [options] <watermark> <infile> [..]
+Usage: ffmpeg-watermark [options] <watermark> <infile> [..]
 
 OPTIONS:
    -a <anchor>  Set anchor of watermark (default: ne)

@@ -16,23 +16,27 @@ The default `PREFIX` is set to `/usr/local`.  In order to successfully complete 
 ## Usage
 
 ```bash
-$ audioshift [-a _time_] [-v _time_] _infile_ [..]
+$ ffmpeg-audioshift [-a _time_] [-v _time_] _infile_ [..]
 ```
 
 ```bash
-$ cattsfile [-y] _infile_ [..]
+$ ffmpeg-cattsfile [-y] _infile_ [..]
 ```
 
 ```bash
-$ cropdetect [-s _time_] [-t _time_] [-c _limit_:_round_:_skip_:_reset_] _infile_
+$ ffmpeg-cropdetect [-s _time_] [-t _time_] [-c _limit_:_round_:_skip_:_reset_] _infile_
 ```
 
 ```bash
-$ fadeinout [-t _time_] [-m _mode_] [-s _stream_] [-n _suffix_] [-y] _infile_
+$ ffmpeg-fadeinout [-t _time_] [-m _mode_] [-s _stream_] [-n _suffix_] [-y] _infile_
 ```
 
 ```bash
-$ watermark [-a _anchor_] [-s _number_] [-m _pixel_] [-y] _watermark_ _infile_ [..]
+$ ffmpeg-gamma [-g __gamma_] [-s __saturation_] _infile_ [..]
+```
+
+```bash
+$ ffmpeg-watermark [-a _anchor_] [-s _number_] [-m _pixel_] [-y] _watermark_ _infile_ [..]
 ```
 
 ## See also

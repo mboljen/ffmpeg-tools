@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
 # Created:         So 2020-06-28 10:29:34 CEST
-# Last Modified:   So 2021-01-24 18:40:09 CET
+# Last Modified:   Di 2023-03-21 11:32:56 CET
 #
-# fadeinout:
+# ffmpeg-fadeinout:
 #    This script will add a fade-in and fade-out effect to the given video
 #    using ffmpeg.
 
@@ -11,7 +11,7 @@
 usage() {
 cat << EOF
 
-Usage: fadeinout [options] <file>
+Usage: ffmpeg-fadeinout [options] <file>
 
 OPTIONS:
    -t <sec>    Fade duration in seconds (default: 5)

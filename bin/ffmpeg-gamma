@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+#
+# Created:        Do 2023-03-16 12:35:18 CET
+# Last Modified:  Di 2023-03-21 11:33:26 CET
+#
+# ffmpeg-gamma:
+#   Enhance gamma and saturation of video file.
+
+# Help text
+usage () {
+cat << EOF
+
+Usage: ffmpeg-gamma [options] <infile> [..]
+
+OPTIONS:
+   -g <value>  Set gamma value (default: 1.0)
+   -s <value>  Set saturation level (default: 1.0)
+   -y          Overwrite existing files
+   -h          Show this help message
+EOF
+}
+
+# Initialization
+FFMPEG=$(command -v ffmpeg)
+
+# Check if ffmpeg is available
+if [ ! -x "${FFMPEG}" ]
+then
+    echo "$0: ffmpeg not found, probably not installed"
+    exit 1
+fi
+
+GAMMA=1.0
+SATURATION=1.0
+YES=0
+
+while getopts "g:s:yh" OPTION
+do
+    case "${OPTION}"
+    in
+        g) GAMMA="${OPTARG}"
+           ;;
+        s) SATURATION="${OPTARG}"
+           ;;
+        y) YES=1
+           ;;
+        h) usage
+           exit 0
+           ;;
+       \?) usage
+           exit 1
+           ;;
+    esac
+done
+
+shift $((OPTIND-1))
+
+if [ $# -lt 1 ]
+then
+    echo "$0: Expecting at least 1 argument"
+    exit 1
+fi
+
+#
+while [ $# -gt 0 ]
+do
+    #
+    INFILE=$1
+    shift
+
+    #
+    if [ ! -f "${INFILE}" ]
+    then
+        echo "$0: ${INFILE} is not a valid file, skipped"
+        continue
+    fi
+
+    tmp=$(basename -- "${INFILE}")
+    OUTFILE="${tmp%.*}-gamma.${tmp##*.}"
+
+    #
+    if [ -f "${OUTFILE}" ] && [ ${YES} -ne 1 ]
+    then
+        echo "$0: ${OUTFILE} already exists, skipped"
+        continue
+    fi
+
+    # Create temporary directory
+    TMPDIR=$(mktemp --directory --tmpdir)
+
+    # Split video in image and modify gamma and saturation on the fly
+    ${FFMPEG} -i ${INFILE} -vf fps=10,eq=gamma=${GAMMA}:saturation=${SATURATION} ${TMPDIR}/img-%03d.png
+
+    # Reassemble video
+    ${FFMPEG} -y -r 60 -f image2 -i ${TMPDIR}/img-%03d.png -c:v libx264 -crf 25 -pix_fmt yuv420p -an ${OUTFILE}
+
+    # Remove temporary directory
+    rm -rf ${TMPDIR}
+
+done

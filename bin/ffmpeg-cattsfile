@@ -3,14 +3,14 @@
 # Created:        Do 16 Jul 2020 02:00:30  CEST
 # Last modified:  Do 16 Jul 2020 02:00:30  CEST
 #
-# cattsfile:
+# ffmpeg-cattsfile:
 #    Concatenate multiple TS video files using ffmpeg
 
 # Help text
 usage() {
 cat << EOF
 
-Usage: cattsfile <file1> ... <outfile>
+Usage: ffmpeg-cattsfile <file1> ... <outfile>
 
 OPTIONS:
   -y   Overwrite existing files
