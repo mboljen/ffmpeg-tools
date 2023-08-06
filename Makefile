@@ -1,7 +1,9 @@
-NAME=audioshift
+NAME=ffmpeg-tools
 VERSION=0.0.1
 
-DIRS=etc lib bin sbin share
+BIN:=$(addprefix ffmpeg-, audioshift cattsfile convert cropdetect fadeinout gamma watermark)
+
+DIRS=etc bin share
 INSTALL_DIRS=`find $(DIRS) -type d 2>/dev/null`
 INSTALL_FILES=`find $(DIRS) -type f 2>/dev/null`
 DOC_FILES=$(wildcard *.md *.txt)
@@ -15,7 +17,7 @@ PREFIX?=/usr/local
 DOC_DIR=$(PREFIX)/share/doc/$(PKG_NAME)
 
 MAN_DIR=share/man/man1
-MAN=$(MAN_DIR)/$(NAME).1.gz
+MAN=$(addprefix $(MAN_DIR)/, $(addsuffix .1.gz, $(BIN)))
 
 build: $(MAN) $(PKG)
 
@@ -31,7 +33,9 @@ man:
 	mkdir -p $(MAN_DIR)
 
 $(MAN): man
-	help2man bin/$(NAME) | gzip -9 > $(MAN)
+
+$(MAN_DIR)/%.1.gz: bin/%
+	help2man $< | gzip -9 > $@
 
 sign: $(SIG)
 
@@ -58,6 +62,5 @@ install:
 uninstall:
 	for file in $(INSTALL_FILES); do rm -f $(PREFIX)/$$file; done
 	rm -rf $(DOC_DIR)
-
 
 .PHONY: build sign man clean test tag release install uninstall all

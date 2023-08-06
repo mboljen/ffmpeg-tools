@@ -1,0 +1,180 @@
+#!/usr/bin/env bash
+#
+# Created:         So 06 Aug 2023 01:34:08  CEST
+# Last Modified:   So 06 Aug 2023 01:34:08  CEST
+#
+# ffmpeg-convert:
+#   This script converts videos batchwise.
+
+# Help text
+usage () {
+cat << EOF
+
+Usage: ffmpeg-convert [options] <file>
+
+OPTIONS:
+  -c <str>  Crop video (default:auto)
+  -o <str>  FFmpeg options
+  -e <ext>  Extension
+  -y        Overwrite existing files
+  -h        Show this help message
+EOF
+}
+
+# Initialization
+FFMPEG=$(command -v ffmpeg)
+CROPDETECT=$(command -v ffmpeg-cropdetect)
+
+# Defaults
+CROP=
+EXT=
+YES=
+OPTS=()
+
+# Parse local and user-defined configuration files
+for file in /etc/ffmpeg-convert.conf $HOME/.ffmpeg-convert
+do
+    if [ -f "$file" ]
+    then
+        $(confget -c -f $file CROP) && CROP=$(confget -nf $file CROP)
+        $(confget -c -f $file OPTS) && OPTS=($(confget -nf $file OPTS))
+        $(confget -c -f $file EXT)  && EXT=$(confget -nf $file EXT)
+        $(confget -c -f $file YES)  && YES=$(confget -nf $file YES)
+    fi
+done
+
+# Process options
+while getopts "c:o:e:yh" OPTION
+do
+    case "$OPTION"
+    in
+        c) CROP="$OPTARG"
+            ;;
+        o) OPTS+=("$OPTARG")
+            ;;
+        e) EXT="$OPTARG"
+            ;;
+        y) YES=1
+            ;;
+        h) usage
+           exit 0
+            ;;
+       \?) usage
+           exit 1
+            ;;
+    esac
+done
+
+# Use default crop
+if [ -z "$CROP" ]
+then
+    CROP=auto
+fi
+
+# Use default FFmpeg's options
+if [ "${#OPTS[@]}" -eq 0 ]
+then
+    OPTS=( -map 0:v -map 0:a? -c:v h264 -crf 23 -c:a copy )
+fi
+
+# Use default file extension
+if [ -z "$EXT" ]
+then
+    EXT=mp4
+fi
+
+if [ -z "$YES" ]
+then
+    YES=0
+fi
+
+# For debugging
+echo "CROP    = $CROP"
+echo "OPTS    = ${OPTS[@]}"
+echo "EXT     = $EXT"
+echo "YES     = $YES"
+
+# Check if ffmpeg is available
+if [ ! -x "$FFMPEG" ]
+then
+    echo "$0: ffmpeg not found, probably not installed"
+    exit 1
+fi
+
+# Check if ffmpeg-cropdetect is available
+if [ ! -x "$CROPDETECT" ]
+then
+    echo "$0: cropdetect is not found, probably not installed"
+    exit 1
+fi
+
+# Skip options and shift index
+shift $((OPTIND-1))
+
+# Check number of arguments
+if [ "$#" -eq 0 ]
+then
+    echo "$0 requires at least 1 argument"
+    usage
+    exit 1
+fi
+
+# Loop over arguments
+while [ $# -gt 0 ]
+do
+
+    # Get filename
+    infile="$1"
+    shift
+
+    # Skip file if not existing
+    if [ ! -f "$infile" ]
+    then
+        echo "$infile does not exist... skipped"
+        continue
+    fi
+
+    # Replace file extension
+    outfile="${infile%.*}.${EXT}"
+
+    # Rename output file if it matches input filename
+    if [ "$outfile" = "$infile" ]
+    then
+        outfile="${infile%.*}-new.${EXT}"
+    fi
+
+    echo "INFILE  = $infile"
+    echo "OUTFILE = $outfile"
+
+    # Check if output file already exists
+    if [ -f "$outfile" ] && [ "${YES}" -eq 0 ]
+    then
+        echo "Outputfile already exists ... skipped"
+        continue
+    fi
+
+    # Set crop option
+    if [ "${CROP}" = "yes" ] || [ "${CROP}" = "true" ] || [ "${CROP}"  = "enabled" ] || [ "${CROP}" = "auto" ]
+    then
+        # Autocrop
+        cropopt="-vf $(${CROPDETECT} "$infile")"
+        if [ $? -ne 0 ]
+        then
+            echo "cropdetect failed with error code $?"
+            cropout=
+        fi
+    elif [ "${CROP}" = "no" ] || [ "${CROP}" = "false" ] || [ "${CROP}" = "disabled" ] || [ -z "${CROP}" ]
+    then
+        # No crop
+        cropopt=
+    else
+        # User defined crop
+        cropopt="-vf \"${CROP}\""
+    fi
+    echo "CROPOPT = $cropopt"
+
+    # Invoke FFmpeg
+    "${FFMPEG}" -y -i "$infile" $cropopt ${OPTS[@]} "$outfile"
+
+done
+

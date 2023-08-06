@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 #
 # Created:         So 2020-06-28 10:29:34 CEST
-# Last Modified:   Di 2023-03-21 11:32:56 CET
+# Last Modified:   So 2023-08-06 23:21:45 CEST
 #
 # ffmpeg-fadeinout:
-#    This script will add a fade-in and fade-out effect to the given video
-#    using ffmpeg.
+#    Add a fade-in and fade-out effect to a video file.
 
 # Help text
 usage() {
@@ -25,10 +24,10 @@ EOF
 
 # Defaults
 FADEDUR=5
-MODE="b"
-STREAM="b"
+MODE='b'
+STREAM='b'
 YES=0
-NAME="_$(basename $0)"
+NAME='-fadeinout'
 FFMPEG=$(command -v ffmpeg)
 FFPROBE=$(command -v ffprobe)
 
@@ -102,6 +101,14 @@ fi
 
 # Skip options and shift index
 shift $((OPTIND-1))
+
+# Check number of arguments
+if [ "$#" -eq 0 ]
+then
+    echo "$0 requires at least 1 argument"
+    usage
+    exit 1
+fi
 
 # Loop over input files
 for f in "$@"

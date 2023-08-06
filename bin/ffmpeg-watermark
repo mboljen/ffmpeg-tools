@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Created:        Do 2023-03-16 12:35:18 CET
-# Last Modified:  Di 2023-03-21 11:33:26 CET
+# Last Modified:  So 2023-08-06 23:15:39 CEST
 #
 # ffmpeg-watermark:
 #   Add a watermark to a certain position in a media file.
@@ -13,7 +13,7 @@ Usage: ffmpeg-watermark [options] <watermark> <infile> [..]
 
 OPTIONS:
    -a <anchor>  Set anchor of watermark (default: ne)
-   -s <number>  Scale watermark according to large dimension of media file (default: 0)
+   -s <number>  Scale watermark according to larger dimension of media file (default: 0)
    -m <pixel>   Set margin around watermark (default: 0)
    -y           Overwrite existing files
    -h           Show this help message

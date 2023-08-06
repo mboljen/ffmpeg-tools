@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 #
 # Created:        Do 2023-03-16 12:35:18 CET
-# Last Modified:  Di 2023-03-21 11:33:26 CET
+# Last Modified:  So 2023-08-06 23:17:31 CEST
 #
 # ffmpeg-gamma:
-#   Enhance gamma and saturation of video file.
+#   Enhance gamma and saturation of a video file.
 
 # Help text
 usage () {
@@ -55,9 +55,11 @@ done
 
 shift $((OPTIND-1))
 
-if [ $# -lt 1 ]
+# Check number of arguments
+if [ "$#" -eq 0 ]
 then
-    echo "$0: Expecting at least 1 argument"
+    echo "$0 requires at least 1 argument"
+    usage
     exit 1
 fi
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Created:         Mo 2020-05-11 01:00:51 CEST
-# Last Modified:   Di 2023-03-21 11:32:27 CET
+# Last Modified:   So 2023-08-06 13:07:02 CEST
 #
 # ffmpeg-cropdetect:
 #   This script detects crop margins of videos.
@@ -111,6 +111,14 @@ fi
 
 # Skip options and shift index
 shift $((OPTIND-1))
+
+# Check number of arguments
+if [ "$#" -eq 0 ]
+then
+    echo "$0 requires at least 1 argument"
+    usage
+    exit 1
+fi
 
 # Loop over arguments
 while [ $# -gt 0 ]

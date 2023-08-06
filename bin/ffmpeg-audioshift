@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Created:         Mo 2019-08-26 11:18:48 CEST
-# Last Modified:   Di 2023-03-21 11:31:58 CET
+# Last Modified:   So 2023-08-06 13:06:38 CEST
 #
 # ffmpeg-audioshift:
 #   Delays the audio or video stream of a video file.
@@ -59,6 +59,14 @@ fi
 
 # Skip options and shift index
 shift $((OPTIND-1))
+
+# Check number of arguments
+if [ "$#" -eq 0 ]
+then
+    echo "$0 requires at least 1 argument"
+    usage
+    exit 1
+fi
 
 # Convert input files
 for INFILE in "$@"
