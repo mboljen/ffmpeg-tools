@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Created:        Do 16 Jul 2020 02:00:30  CEST
-# Last modified:  Do 16 Jul 2020 02:00:30  CEST
+# Created:         Do 16 Jul 2020 02:00:30  CEST
+# Last modified:   Do 16 Jul 2020 02:00:30  CEST
 #
 # ffmpeg-cattsfile:
 #    Concatenate multiple TS video files using ffmpeg
@@ -10,7 +10,7 @@
 usage() {
 cat << EOF
 
-Usage: ffmpeg-cattsfile <file1> ... <outfile>
+Usage: ffmpeg-cattsfile [options] <infile> ... <outfile>
 
 OPTIONS:
   -y   Overwrite existing files
@@ -27,12 +27,13 @@ while getopts "yh" OPTION
 do
     case "${OPTION}"
     in
-        y)
-            YES=1
+        y)  YES=1
             ;;
-        h|\?)
-            usage
+        h)  usage
             exit 0
+            ;;
+      |\?)  usage
+            exit 1
             ;;
     esac
 done
@@ -81,4 +82,4 @@ do
 done
 
 # Invoke ffmpeg
-${FFMPEG} -y -i "concat:${OPT}" -c copy "${OUTFILE}"
+"${FFMPEG}" -y -i "concat:${OPT}" -c copy "${OUTFILE}"

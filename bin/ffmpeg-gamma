@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Created:        Do 2023-03-16 12:35:18 CET
-# Last Modified:  So 2023-08-06 23:17:31 CEST
+# Last Modified:  So 2023-08-06 23:37:02 CEST
 #
 # ffmpeg-gamma:
 #   Enhance gamma and saturation of a video file.
@@ -13,10 +13,10 @@ cat << EOF
 Usage: ffmpeg-gamma [options] <infile> [..]
 
 OPTIONS:
-   -g <value>  Set gamma value (default: 1.0)
-   -s <value>  Set saturation level (default: 1.0)
-   -y          Overwrite existing files
-   -h          Show this help message
+   -g <gamma>       Set gamma value (default: 1.0)
+   -s <saturation>  Set saturation level (default: 1.0)
+   -y               Overwrite existing files
+   -h               Show this help message
 EOF
 }
 

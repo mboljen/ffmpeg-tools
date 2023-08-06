@@ -50,7 +50,7 @@ $ ffmpeg-cattsfile [-y] _infile_ [..]
 #### Options
 
 **-y**
-: Overwriting existing files
+: Overwrite existing files
 
 **-h**
 : Show this help message
@@ -69,13 +69,13 @@ $ ffmpeg-convert [-y] _infile_ [..]
 #### Options
 
 **-c** _string_
-: Crop video (default:`auto`)
+: Set cropdetect to remove black borders (default: `auto`)
 
 **-o** _string_
-: Set default **ffmpeg** options
+: Set `ffmpeg` options
 
 **-e** _ext_
-: Set default file extension of output file (default: `mp4`)
+: Set file extension of output file (default: `mp4`)
 
 **-y**
 : Overwrite existing files
