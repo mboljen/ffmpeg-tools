@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 #
 # Created:         So 2020-06-28 10:29:34 CEST
-# Last Modified:   So 2023-08-06 23:39:25 CEST
+# Last Modified:   Mo 2023-08-07 09:51:27 CEST
 #
 # ffmpeg-fadeinout:
-#    Add a fade-in and fade-out effect to a video file.
+#    Add a fade-in and fade-out effect to one or several video files.
 
 # Help text
 usage() {
 cat << EOF
 
-Usage: ffmpeg-fadeinout [options] <file>
+Usage: ffmpeg-fadeinout [options] <infile> [..]
 
 OPTIONS:
    -t <time>     Fade duration in seconds (default: 5)
@@ -180,7 +180,7 @@ do
     fi
 
     # Assemble command line
-    CMDLINE=(ffmpeg -y -i "${f}" -filter_complex "${FILTER}" "${MAP[@]}" "${FNEW}")
+    CMDLINE=("${FFMPEG}" -y -i "${f}" -filter_complex "${FILTER}" "${MAP[@]}" "${FNEW}")
     echo -e "\n[" "${CMDLINE[@]}" "]\n"
 
     # Execute ffmpeg

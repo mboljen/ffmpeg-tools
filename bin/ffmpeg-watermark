@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 #
-# Created:        Do 2023-03-16 12:35:18 CET
-# Last Modified:  So 2023-08-06 23:15:39 CEST
+# Created:         Do 2023-03-16 12:35:18 CET
+# Last Modified:   Mo 2023-08-07 09:51:26 CEST
 #
 # ffmpeg-watermark:
-#   Add a watermark to a certain position in a media file.
+#   Add a watermark to a certain position in one or several media files.
 
 usage () {
 cat << EOF
@@ -195,55 +195,55 @@ do
     then
 
         # Center
-        ${FFMPEG} -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE} [wm];[0][wm]overlay=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/2" "${OUTFILE}"
+        "${FFMPEG}" -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE} [wm];[0][wm]overlay=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/2" "${OUTFILE}"
 
     elif [[ "${ANCHOR}" =~ ^(n|north)$ ]]
     then
 
         # North
-        ${FFMPEG} -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE} [wm];[0][wm]overlay=x=(main_w-overlay_w)/2:y=${MARGIN}" "${OUTFILE}"
+        "${FFMPEG}" -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE} [wm];[0][wm]overlay=x=(main_w-overlay_w)/2:y=${MARGIN}" "${OUTFILE}"
 
     elif [[ "${ANCHOR}" =~ ^(s|south)$ ]]
     then
 
         # South
-        ${FFMPEG} -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE} [wm];[0][wm]overlay=x=(main_w-overlay_w)/2:y=main_h-overlay_h-${MARGIN}" "${OUTFILE}"
+        "${FFMPEG}" -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE} [wm];[0][wm]overlay=x=(main_w-overlay_w)/2:y=main_h-overlay_h-${MARGIN}" "${OUTFILE}"
 
     elif [[ "${ANCHOR}" =~ ^(e|east)$ ]]
     then
 
         # East
-        ${FFMPEG} -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE} [wm];[0][wm]overlay=x=main_w-overlay_w-${MARGIN}:y=(main_h-overlay_h)/2" "${OUTFILE}"
+        "${FFMPEG}" -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE} [wm];[0][wm]overlay=x=main_w-overlay_w-${MARGIN}:y=(main_h-overlay_h)/2" "${OUTFILE}"
 
     elif [[ "${ANCHOR}" =~ ^(w|west)$ ]]
     then
 
         # West
-        ${FFMPEG} -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE} [wm];[0][wm]overlay=x=${MARGIN}:y=(main_h-overlay_h)/2" "${OUTFILE}"
+        "${FFMPEG}" -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE} [wm];[0][wm]overlay=x=${MARGIN}:y=(main_h-overlay_h)/2" "${OUTFILE}"
 
     elif [[ "${ANCHOR}" =~ ^(nw|northwest)$ ]]
     then
 
         # Northwest
-        ${FFMPEG} -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE} [wm];[0][wm]overlay=x=${MARGIN}:y=${MARGIN}" "${OUTFILE}"
+        "${FFMPEG}" -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE} [wm];[0][wm]overlay=x=${MARGIN}:y=${MARGIN}" "${OUTFILE}"
 
     elif [[ "${ANCHOR}" =~ ^(ne|northeast)$ ]]
     then
 
         # Northeast
-        ${FFMPEG} -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE} [wm];[0][wm]overlay=x=main_w-overlay_w-${MARGIN}:y=${MARGIN}" "${OUTFILE}"
+        "${FFMPEG}" -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE} [wm];[0][wm]overlay=x=main_w-overlay_w-${MARGIN}:y=${MARGIN}" "${OUTFILE}"
 
     elif [[ "${ANCHOR}" =~ ^(sw|southwest)$ ]]
     then
 
         # Southwest
-        ${FFMPEG} -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE} [wm];[0][wm]overlay=x=${MARGIN}:y=main_h-overlay_h-${MARGIN}" "${OUTFILE}"
+        "${FFMPEG}" -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE} [wm];[0][wm]overlay=x=${MARGIN}:y=main_h-overlay_h-${MARGIN}" "${OUTFILE}"
 
     elif [[ "${ANCHOR}" =~ ^(se|southeast)$ ]]
     then
 
         # Southeast
-        ${FFMPEG} -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE} [wm];[0][wm]overlay=x=main_w-overlay_w-${MARGIN}:y=main_h-overlay_h-${MARGIN}" "${OUTFILE}"
+        "${FFMPEG}" -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE} [wm];[0][wm]overlay=x=main_w-overlay_w-${MARGIN}:y=main_h-overlay_h-${MARGIN}" "${OUTFILE}"
 
     else
 

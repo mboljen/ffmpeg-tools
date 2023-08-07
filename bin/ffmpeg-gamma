@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 #
-# Created:        Do 2023-03-16 12:35:18 CET
-# Last Modified:  So 2023-08-06 23:37:02 CEST
+# Created:         Do 2023-03-16 12:35:18 CET
+# Last Modified:   Mo 2023-08-07 09:43:17 CEST
 #
 # ffmpeg-gamma:
-#   Enhance gamma and saturation of a video file.
+#   Enhance gamma and saturation of one or several video files.
 
 # Help text
 usage () {
@@ -91,12 +91,12 @@ do
     TMPDIR=$(mktemp --directory --tmpdir)
 
     # Split video in image and modify gamma and saturation on the fly
-    ${FFMPEG} -i ${INFILE} -vf fps=10,eq=gamma=${GAMMA}:saturation=${SATURATION} ${TMPDIR}/img-%03d.png
+    "${FFMPEG}" -i "${INFILE}" -vf fps=10,eq=gamma=${GAMMA}:saturation=${SATURATION} "${TMPDIR}/img-%03d.png"
 
     # Reassemble video
-    ${FFMPEG} -y -r 60 -f image2 -i ${TMPDIR}/img-%03d.png -c:v libx264 -crf 25 -pix_fmt yuv420p -an ${OUTFILE}
+    "${FFMPEG}" -y -r 60 -f image2 -i "${TMPDIR}/img-%03d.png" -c:v libx264 -crf 25 -pix_fmt yuv420p -an "${OUTFILE}"
 
     # Remove temporary directory
-    rm -rf ${TMPDIR}
+    rm -rf "${TMPDIR}"
 
 done

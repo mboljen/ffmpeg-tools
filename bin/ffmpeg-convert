@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
 #
-# Created:         So 06 Aug 2023 01:34:08  CEST
-# Last Modified:   So 06 Aug 2023 01:34:08  CEST
+# Created:         So 2023-08-06 01:34:08 CEST
+# Last Modified:   Mo 2023-08-07 09:51:44 CEST
 #
 # ffmpeg-convert:
-#   This script converts videos batchwise.
+#   Convert one or several video files.
 
 # Help text
 usage () {
 cat << EOF
 
-Usage: ffmpeg-convert [options] <infile>
+Usage: ffmpeg-convert [options] <infile> [..]
 
 OPTIONS:
-  -c <string>  Set cropdetect to remove black borders (default: auto)
-  -o <list>    Set ffmpeg option (can be used multiple times)
-  -e <ext>     Set file extension of output file (default: mp4)
-  -y           Overwrite existing files
-  -h           Show this help message
+  -c <string>          Set cropdetect to remove black borders (default: auto)
+  -o <option> [value]  Set ffmpeg option and value (can be used multiple times)
+  -e <ext>             Set file extension of output file (default: mp4)
+  -y                   Overwrite existing files
+  -h                   Show this help message
 EOF
 }
 
@@ -31,15 +31,18 @@ EXT=
 YES=
 OPTS=()
 
+# Resolve folder where script resides
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
 # Parse local and user-defined configuration files
-for file in /etc/ffmpeg-convert.conf $HOME/.ffmpeg-convert
+for file in "${SCRIPT_DIR}/../etc/ffmpeg-convert.conf" "${HOME}/.ffmpeg-convert"
 do
     if [ -f "$file" ]
     then
-        $(confget -c -f $file CROP) && CROP=$(confget -nf $file CROP)
-        $(confget -c -f $file OPTS) && OPTS=($(confget -nf $file OPTS))
-        $(confget -c -f $file EXT)  && EXT=$(confget -nf $file EXT)
-        $(confget -c -f $file YES)  && YES=$(confget -nf $file YES)
+        $(confget -c -f "$file" CROP) && CROP=$(confget -nf "$file" CROP)
+        $(confget -c -f "$file" OPTS) && OPTS=( $(confget -nf "$file" OPTS) )
+        $(confget -c -f "$file" EXT) && EXT=$(confget -nf "$file" EXT)
+        $(confget -c -f "$file" YES) && YES=$(confget -nf "$file" YES)
     fi
 done
 
@@ -82,7 +85,7 @@ do
 done
 
 # Use default crop
-if [ -z "$CROP" ]
+if [ -z "${CROP}" ]
 then
     CROP=auto
 fi
@@ -94,25 +97,25 @@ then
 fi
 
 # Use default file extension
-if [ -z "$EXT" ]
+if [ -z "${EXT}" ]
 then
     EXT=mp4
 fi
 
-if [ -z "$YES" ]
+if [ -z "${YES}" ]
 then
     YES=0
 fi
 
 # Check if ffmpeg is available
-if [ ! -x "$FFMPEG" ]
+if [ ! -x "${FFMPEG}" ]
 then
     echo "$0: ffmpeg not found, probably not installed"
     exit 1
 fi
 
 # Check if ffmpeg-cropdetect is available
-if [ ! -x "$CROPDETECT" ]
+if [ ! -x "${CROPDETECT}" ]
 then
     echo "$0: cropdetect is not found, probably not installed"
     exit 1
@@ -130,40 +133,40 @@ then
 fi
 
 # For debugging
-echo "CROP    = $CROP"
+echo "CROP    = ${CROP}"
 echo "OPTS    = ${OPTS[@]}"
-echo "EXT     = $EXT"
-echo "YES     = $YES"
+echo "EXT     = ${EXT}"
+echo "YES     = ${YES}"
 
 # Loop over arguments
 while [ $# -gt 0 ]
 do
 
     # Get filename
-    infile="$1"
+    INFILE="$1"
     shift
 
     # Skip file if not existing
-    if [ ! -f "$infile" ]
+    if [ ! -f "${INFILE}" ]
     then
-        echo "$infile does not exist... skipped"
+        echo "$0: ${INFILE} is not a valid file, skipped"
         continue
     fi
 
     # Replace file extension
-    outfile="${infile%.*}.${EXT}"
+    OUTFILE="${INFILE%.*}.${EXT}"
 
     # Rename output file if it matches input filename
-    if [ "$outfile" = "$infile" ]
+    if [ "${OUTFILE}" = "$INFILE" ]
     then
-        outfile="${infile%.*}-new.${EXT}"
+        OUTFILE="${INFILE%.*}-new.${EXT}"
     fi
 
-    echo "INFILE  = $infile"
-    echo "OUTFILE = $outfile"
+    echo "INFILE  = ${INFILE}"
+    echo "OUTFILE = ${OUTFILE}"
 
     # Check if output file already exists
-    if [ -f "$outfile" ] && [ "${YES}" -eq 0 ]
+    if [ -f "$OUTFILE" ] && [ "${YES}" -eq 0 ]
     then
         echo "Outputfile already exists ... skipped"
         continue
@@ -175,7 +178,7 @@ do
        [ "${CROP}" = "enabled" ] || [ "${CROP}" = "auto" ]
     then
         # Autocrop
-        cropopt="-vf $(${CROPDETECT} "$infile")"
+        cropopt="-vf $(${CROPDETECT} "${INFILE}")"
         if [ $? -ne 0 ]
         then
             echo "cropdetect failed with error code $?"
@@ -195,6 +198,6 @@ do
     echo "CROPOPT = $cropopt"
 
     # Invoke FFmpeg
-    "${FFMPEG}" -y -i "$infile" $cropopt ${OPTS[@]} "$outfile"
+    "${FFMPEG}" -y -i "${INFILE}" $cropopt ${OPTS[@]} "${OUTFILE}"
 
 done

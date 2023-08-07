@@ -1,20 +1,21 @@
 #!/usr/bin/env bash
 #
 # Created:         Mo 2019-08-26 11:18:48 CEST
-# Last Modified:   So 2023-08-06 13:06:38 CEST
+# Last Modified:   Mo 2023-08-07 09:59:09 CEST
 #
 # ffmpeg-audioshift:
-#   Delays the audio or video stream of a video file.
+#   Delay the audio or video stream of one or several video files.
 
 # Help text
 usage() {
 cat << EOF
 
-Usage: ffmpeg-audioshift [options] <file>
+Usage: ffmpeg-audioshift [options] <infile> [..]
 
 OPTIONS:
-   -a <time>   Delay audio track (seconds)
-   -v <time>   Delay video track (seconds)
+   -a <time>   Delay audio track in seconds (default: 0)
+   -v <time>   Delay video track in seconds (default: 0)
+   -y          Overwrite existing files
    -h          Show this help message
 EOF
 }
@@ -22,9 +23,10 @@ EOF
 # Initialization
 FFMPEG=$(command -v ffmpeg)
 TIME=0.0
+YES=0
 
 # Process options
-while getopts "h?a:v:" OPTION
+while getopts "a:v:yh" OPTION
 do
     case "${OPTION}"
     in
@@ -36,6 +38,8 @@ do
             MAP="-map 1:v -map 0:a"
             echo "Video track will be delayed by ${TIME}"
             ;;
+        y)  YES=1
+            ;;
         h|\?)
             usage
             exit 0
@@ -46,7 +50,7 @@ done
 # Check availability of converter
 if [ ! -x "${FFMPEG}" ]
 then
-    echo "ffmpeg not found, probably not installed"
+    echo "$0: ffmpeg not found, probably not installed"
     exit 1
 fi
 
@@ -79,7 +83,7 @@ do
         echo -e "\n### Processing ${INFILE} ... please wait ...\n"
 
         # Process file
-        ${FFMPEG} -y -i "${INFILE}" -itsoffset "${TIME}" -i "${INFILE}" "${MAP}" -vcodec copy -acodec copy "${INFILE%.*}-audioshift.${INFILE##*.}"
+        "${FFMPEG}" -y -i "${INFILE}" -itsoffset "${TIME}" -i "${INFILE}" "${MAP}" -vcodec copy -acodec copy "${INFILE%.*}-audioshift.${INFILE##*.}"
 
     else
 

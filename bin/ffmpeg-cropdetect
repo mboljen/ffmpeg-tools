@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 #
 # Created:         Mo 2020-05-11 01:00:51 CEST
-# Last Modified:   So 2023-08-06 13:07:02 CEST
+# Last Modified:   Mo 2023-08-07 09:51:29 CEST
 #
 # ffmpeg-cropdetect:
-#   This script detects crop margins of videos.
+#   Detect black margins of one or several video files.
 
 # Help text
 usage () {
 cat << EOF
 
-Usage: ffmpeg-cropdetect [options] <file>
+Usage: ffmpeg-cropdetect [options] <infile> [..]
 
 OPTIONS:
   -s <time>    Skip time (default: 2% of total time)
@@ -52,14 +52,14 @@ do
 done
 
 # Check if ffmpeg is available
-if [ ! -x "$FFMPEG" ]
+if [ ! -x "${FFMPEG}" ]
 then
     echo "$0: ffmpeg not found, probably not installed"
     exit 1
 fi
 
 # Check if ffprobe is available
-if [ ! -x "$FFPROBE" ]
+if [ ! -x "${FFPROBE}" ]
 then
     echo "$0: ffprobe not found, probably not installed"
     exit 1
@@ -103,9 +103,9 @@ then
 fi
 
 # Pattern matching for CROPDETECT
-if [[ ! "$CROPDETECT" =~ ^[0-9]+(((:[0-9]+)?:[0-9]+)?:[0-9]+)?$ ]]
+if [[ ! "${CROPDETECT}" =~ ^[0-9]+(((:[0-9]+)?:[0-9]+)?:[0-9]+)?$ ]]
 then
-    echo "$0: Invalid cropdetect value '$CROPDETECT'"
+    echo "$0: Invalid cropdetect value '${CROPDETECT}'"
     exit 4
 fi
 
@@ -125,23 +125,23 @@ while [ $# -gt 0 ]
 do
 
     # get filename
-    infile="$1"
+    INFILE="$1"
     shift
 
     # Skip file if not existing
-    if [ ! -f "$infile" ]
+    if [ ! -f "${INFILE}" ]
     then
-        echo "$infile does not exist... skipped"
+        echo "$0: ${INFILE} is not a valid file, skipped"
         continue
     fi
 
     # Get duration of first video stream in seconds
-    dur=$($FFPROBE -i "$infile" -show_format -v quiet | sed -n 's/duration=//p')
+    dur=$("${FFPROBE}" -i "${INFILE}" -show_format -v quiet | sed -n 's/duration=//p')
 
     # Check duration
     if (( $(echo "$dur <= 0" | bc -l) ))
     then
-        echo "$infile has non-positive duration $dur ... skipped"
+        echo "${INFILE} has non-positive duration $dur ... skipped"
         continue
     fi
 
@@ -188,7 +188,7 @@ do
     #echo "T1 = $T1"
 
     # Grep crop geometry
-    result=$($FFMPEG -i "$infile" -ss "$T0" -t "$T1" -vsync vfr -vf "fps=1/2,cropdetect=$CROPDETECT" -f null - 2>&1 | awk '/crop/ { print $NF }' | tr ' ' '\n' | sort | uniq -c | sort -n | tail -1 | awk '{ print $NF }')
+    result=$("${FFMPEG}" -i "${INFILE}" -ss "$T0" -t "$T1" -vsync vfr -vf "fps=1/2,cropdetect=$CROPDETECT" -f null - 2>&1 | awk '/crop/ { print $NF }' | tr ' ' '\n' | sort | uniq -c | sort -n | tail -1 | awk '{ print $NF }')
 
     # Check result string
     [ -n "$result" ] && echo "$result" || exit 5

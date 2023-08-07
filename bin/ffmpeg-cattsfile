@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 #
-# Created:         Do 16 Jul 2020 02:00:30  CEST
-# Last modified:   Do 16 Jul 2020 02:00:30  CEST
+# Created:         Do 2020-07-16 02:00:30 CEST
+# Last Modified:   Mo 2023-08-07 09:51:31 CEST
 #
 # ffmpeg-cattsfile:
-#    Concatenate multiple TS video files using ffmpeg
+#    Concatenate multiple TS video files.
 
 # Help text
 usage() {
@@ -41,7 +41,7 @@ done
 # Check availability of ffmpeg
 if ! [ -x "${FFMPEG}" ]
 then
-    echo "ffmpeg not found, probably not installed"
+    echo "$0: ffmpeg not found, probably not installed"
     exit 1
 fi
 
