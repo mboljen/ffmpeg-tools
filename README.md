@@ -36,7 +36,7 @@ Delay the audio or the video track of one or several video files.
 
 #### Synopsis
 
-```bash
+```console
 $ ffmpeg-audioshift [-a <time>] [-v <time>] [-y] <infile> [..]
 ```
 
@@ -51,9 +51,6 @@ $ ffmpeg-audioshift [-a <time>] [-v <time>] [-y] <infile> [..]
 **-y**
 : Overwrite existing files
 
-**-h**
-: Show a short help message
-
 
 ### ffmpeg-cattsfile
 
@@ -61,17 +58,14 @@ Concatenate multiple TS video files.
 
 #### Synopsis
 
-```bash
-$ ffmpeg-cattsfile <infile> [..] <outfile>
+```console
+$ ffmpeg-cattsfile [-y] <infile> [..] <outfile>
 ```
 
 #### Options
 
 **-y**
 : Overwrite existing files
-
-**-h**
-: Show a short help message
 
 
 ### ffmpeg-convert
@@ -80,7 +74,7 @@ Convert one or several video files.
 
 #### Synopsis
 
-```bash
+```console
 $ ffmpeg-convert [-c <string>] [-o <option> [value]] [-e <ext>] [-y] <infile> [..]
 ```
 
@@ -97,9 +91,6 @@ $ ffmpeg-convert [-c <string>] [-o <option> [value]] [-e <ext>] [-y] <infile> [.
 
 **-y**
 : Overwrite existing files
-
-**-h**
-: Show a short help message
 
 #### Default settings
 
@@ -126,7 +117,7 @@ Detect black margins of one or several video files.
 
 #### Synopsis
 
-```bash
+```console
 $ ffmpeg-cropdetect [-s <time>] [-t <time>] [-c <limit>:<round>:<skip>:<reset>] <infile> [..]
 ```
 
@@ -141,9 +132,6 @@ $ ffmpeg-cropdetect [-s <time>] [-t <time>] [-c <limit>:<round>:<skip>:<reset>] 
 **-c** _limit_:_round_:_skip_:_reset_
 : set the `cropdetect` filter of **ffmpeg** (default: "24:16:2:0").
 
-**-h**
-: Show a short help message
-
 
 ### ffmpeg-fadeinout
 
@@ -151,7 +139,7 @@ Add a fade-in and fade-out effect to one or several video files.
 
 #### Synopsis
 
-```bash
+```console
 $ ffmpeg-fadeinout [-t <time>] [-m <mode>] [-s <stream>] [-n <suffix>] [-y] <infile> [..]
 ```
 
@@ -172,9 +160,6 @@ $ ffmpeg-fadeinout [-t <time>] [-m <mode>] [-s <stream>] [-n <suffix>] [-y] <inf
 **-y**
 : Overwrite existing files
 
-**-h**
-: Show a short help message
-
 
 ### ffmpeg-gamma
 
@@ -182,7 +167,7 @@ Enhance gamma and saturation of one or several video files.
 
 #### Synopsis
 
-```bash
+```console
 $ ffmpeg-gamma [-g <gamma>] [-s <saturation>] [-y] <infile> [..]
 ```
 
@@ -197,9 +182,6 @@ $ ffmpeg-gamma [-g <gamma>] [-s <saturation>] [-y] <infile> [..]
 **-y**
 : Overwrite existing files
 
-**-h**
-: Show a short help message
-
 
 ### ffmpeg-watermark
 
@@ -207,7 +189,7 @@ Add a watermark to a certain position in one or several media files.
 
 #### Synopsis
 
-```bash
+```console
 $ ffmpeg-watermark [-a <anchor>] [-s <number>] [-m <pixel>] [-y] <watermark> <infile> [..]
 ```
 
@@ -224,10 +206,6 @@ $ ffmpeg-watermark [-a <anchor>] [-s <number>] [-m <pixel>] [-y] <watermark> <in
 
 **-y**
 : Overwrite existing files
-
-**-h**
-: Show a short help message
-
 
 
 ## See also

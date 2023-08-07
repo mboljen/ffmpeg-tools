@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Created:         So 2023-08-06 01:34:08 CEST
-# Last Modified:   Mo 2023-08-07 09:51:44 CEST
+# Last Modified:   Mo 2023-08-07 10:33:02 CEST
 #
 # ffmpeg-convert:
 #   Convert one or several video files.
@@ -39,10 +39,10 @@ for file in "${SCRIPT_DIR}/../etc/ffmpeg-convert.conf" "${HOME}/.ffmpeg-convert"
 do
     if [ -f "$file" ]
     then
-        $(confget -c -f "$file" CROP) && CROP=$(confget -nf "$file" CROP)
-        $(confget -c -f "$file" OPTS) && OPTS=( $(confget -nf "$file" OPTS) )
-        $(confget -c -f "$file" EXT) && EXT=$(confget -nf "$file" EXT)
-        $(confget -c -f "$file" YES) && YES=$(confget -nf "$file" YES)
+        confget -c -f "$file" CROP && CROP=$(confget -nf "$file" CROP)
+        confget -c -f "$file" OPTS && mapfile -t OPTS < <( confget -nf "$file" OPTS )
+        confget -c -f "$file" EXT  && EXT=$(confget -nf "$file" EXT)
+        confget -c -f "$file" YES  && YES=$(confget -nf "$file" YES)
     fi
 done
 
@@ -67,7 +67,7 @@ do
             # add it to the pass-through array and skip it
             if [[ ${@:OPTIND:1} != -* ]]
             then
-                OPTS+=("${@: OPTIND:1}" )
+                OPTS+=("${@:OPTIND:1}" )
                 (( ++OPTIND ))
             fi
             ;;
@@ -134,7 +134,7 @@ fi
 
 # For debugging
 echo "CROP    = ${CROP}"
-echo "OPTS    = ${OPTS[@]}"
+echo "OPTS    = " "${OPTS[@]}"
 echo "EXT     = ${EXT}"
 echo "YES     = ${YES}"
 
@@ -178,26 +178,26 @@ do
        [ "${CROP}" = "enabled" ] || [ "${CROP}" = "auto" ]
     then
         # Autocrop
-        cropopt="-vf $(${CROPDETECT} "${INFILE}")"
+        cropopt=(-vf $(${CROPDETECT} "${INFILE}"))
         if [ $? -ne 0 ]
         then
             echo "cropdetect failed with error code $?"
-            cropout=
+            cropopt=()
         fi
     elif [ "${CROP}" = "no"       ] || \
          [ "${CROP}" = "false"    ] || \
          [ "${CROP}" = "disabled" ] || [ -z "${CROP}" ]
     then
         # No crop
-        cropopt=
+        cropopt=()
     else
         # User defined crop
-        cropopt="-vf \"${CROP}\""
+        cropopt=(-vf \""${CROP}"\")
     fi
 
-    echo "CROPOPT = $cropopt"
+    echo "CROPOPT = " "${cropopt[@]}"
 
     # Invoke FFmpeg
-    "${FFMPEG}" -y -i "${INFILE}" $cropopt ${OPTS[@]} "${OUTFILE}"
+    "${FFMPEG}" -y -i "${INFILE}" ${cropopt[@]} ${OPTS[@]} "${OUTFILE}"
 
 done

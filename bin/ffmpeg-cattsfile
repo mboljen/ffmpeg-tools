@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Created:         Do 2020-07-16 02:00:30 CEST
-# Last Modified:   Mo 2023-08-07 09:51:31 CEST
+# Last Modified:   Mo 2023-08-07 10:14:18 CEST
 #
 # ffmpeg-cattsfile:
 #    Concatenate multiple TS video files.
@@ -32,7 +32,7 @@ do
         h)  usage
             exit 0
             ;;
-      |\?)  usage
+       \?)  usage
             exit 1
             ;;
     esac
