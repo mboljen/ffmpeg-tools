@@ -37,7 +37,7 @@ Delay the audio or the video track of one or several video files.
 #### Synopsis
 
 ```bash
-$ ffmpeg-audioshift [-a _time_] [-v _time_] [-y] _infile_ [..]
+$ ffmpeg-audioshift [-a <time>] [-v <time>] [-y] <infile> [..]
 ```
 
 #### Options
@@ -62,7 +62,7 @@ Concatenate multiple TS video files.
 #### Synopsis
 
 ```bash
-$ ffmpeg-cattsfile _infile_ [..] _outfile_
+$ ffmpeg-cattsfile <infile> [..] <outfile>
 ```
 
 #### Options
@@ -81,7 +81,7 @@ Convert one or several video files.
 #### Synopsis
 
 ```bash
-$ ffmpeg-convert [-c _string_] [-o _option_ [_value_]] [-e _ext_] [-y] _infile_ [..]
+$ ffmpeg-convert [-c <string>] [-o <option> [value]] [-e <ext>] [-y] <infile> [..]
 ```
 
 #### Options
@@ -127,7 +127,7 @@ Detect black margins of one or several video files.
 #### Synopsis
 
 ```bash
-$ ffmpeg-cropdetect [-s _time_] [-t _time_] [-c _limit_:_round_:_skip_:_reset_] _infile_ [..]
+$ ffmpeg-cropdetect [-s <time>] [-t <time>] [-c <limit>:<round>:<skip>:<reset>] <infile> [..]
 ```
 
 #### Options
@@ -152,7 +152,7 @@ Add a fade-in and fade-out effect to one or several video files.
 #### Synopsis
 
 ```bash
-$ ffmpeg-fadeinout [-t _time_] [-m _mode_] [-s _stream_] [-n _suffix_] [-y] _infile_ [..]
+$ ffmpeg-fadeinout [-t <time>] [-m <mode>] [-s <stream>] [-n <suffix>] [-y] <infile> [..]
 ```
 
 #### Options
@@ -183,7 +183,7 @@ Enhance gamma and saturation of one or several video files.
 #### Synopsis
 
 ```bash
-$ ffmpeg-gamma [-g _gamma_] [-s _saturation_] [-y] _infile_ [..]
+$ ffmpeg-gamma [-g <gamma>] [-s <saturation>] [-y] <infile> [..]
 ```
 
 #### Options
@@ -208,7 +208,7 @@ Add a watermark to a certain position in one or several media files.
 #### Synopsis
 
 ```bash
-$ ffmpeg-watermark [-a _anchor_] [-s _number_] [-m _pixel_] [-y] _watermark_ _infile_ [..]
+$ ffmpeg-watermark [-a <anchor>] [-s <number>] [-m <pixel>] [-y] <watermark> <infile> [..]
 ```
 
 #### Options
