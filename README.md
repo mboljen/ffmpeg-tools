@@ -190,7 +190,7 @@ Add a watermark to a certain position in one or several media files.
 #### Synopsis
 
 ```console
-$ ffmpeg-watermark [-a <anchor>] [-s <number>] [-m <pixel>] [-y] <watermark> <infile> [..]
+$ ffmpeg-watermark [-a <anchor>] [-s <number>] [-m <pixel>] [-o <opacity>] [-r <angle>] [-y] <watermark> <infile> [..]
 ```
 
 #### Options
@@ -203,6 +203,12 @@ $ ffmpeg-watermark [-a <anchor>] [-s <number>] [-m <pixel>] [-y] <watermark> <in
 
 **-m** _pixel_
 : Set margin around watermark (default: `0`)
+
+**-o** _opacity_
+: Set opacity of watermark (default: `1`)
+
+**-r** _angle_
+: Set counter-clockwise rotation angle of watermark in degrees (default: `0`)
 
 **-y**
 : Overwrite existing files
