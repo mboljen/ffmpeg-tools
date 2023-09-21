@@ -208,7 +208,7 @@ $ ffmpeg-watermark [-a <anchor>] [-s <number>] [-m <pixel>] [-o <opacity>] [-r <
 : Set opacity of watermark (default: `1`)
 
 **-r** _angle_
-: Set counter-clockwise rotation angle of watermark in degrees (default: `0`)
+: Set clockwise rotation angle of watermark in degrees (default: `0`)
 
 **-y**
 : Overwrite existing files
