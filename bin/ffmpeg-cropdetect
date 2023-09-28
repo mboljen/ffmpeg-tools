@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Created:         Mo 2020-05-11 01:00:51 CEST
-# Last Modified:   Thu 2023-09-28 23:21:49 CEST
+# Last Modified:   Fri 2023-09-29 00:09:13 CEST
 #
 # ffmpeg-cropdetect:
 #   Detect black margins of one or several video files.
@@ -12,7 +12,7 @@ set -euo pipefail
 usage() {
 >&2 cat << EOF
 
-Usage: ffmpeg-cropdetect [OPTION] INFILE...
+Usage: ffmpeg-cropdetect [OPTION]... INFILE...
 
 Detect black margins of one or several video files.
 

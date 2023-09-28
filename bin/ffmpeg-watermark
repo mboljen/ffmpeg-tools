@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Created:         Thu 2023-03-16 12:35:18 CET
-# Last Modified:   Thu 2023-09-28 23:22:04 CEST
+# Last Modified:   Fri 2023-09-29 00:08:34 CEST
 #
 # ffmpeg-watermark:
 #   Add a watermark to a certain position in one or several media files.
@@ -11,7 +11,7 @@ set -euo pipefail
 usage() {
 >&2 cat << EOF
 
-Usage: $(basename $0) [OPTION] WATERMARK INFILE...
+Usage: $(basename $0) [OPTION]... WATERMARK INFILE...
 
 Add an image WATERMARK at a certain position in one or several media files.
 

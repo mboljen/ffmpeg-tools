@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Created:         Thu 2020-07-16 02:00:30 CEST
-# Last Modified:   Thu 2023-09-28 23:20:19 CEST
+# Last Modified:   Fri 2023-09-29 00:10:14 CEST
 #
 # ffmpeg-cattsfile:
 #    Concatenate multiple TS video files.
@@ -12,7 +12,7 @@ set -euo pipefail
 usage() {
 >&2 cat << EOF
 
-Usage: ffmpeg-cattsfile [OPTION] INFILE... OUTFILE
+Usage: ffmpeg-cattsfile [OPTION]... INFILE... OUTFILE
 
 Concatenate multiple TS video files.
 

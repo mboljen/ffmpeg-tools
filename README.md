@@ -37,7 +37,7 @@ Delay the audio or the video track of one or several video files.
 #### Synopsis
 
 ```console
-$ ffmpeg-audioshift [-a <time>] [-v <time>] [-y] <infile> [..]
+$ ffmpeg-audioshift [OPTION]... INFILE...
 ```
 
 #### Options
@@ -59,7 +59,7 @@ Concatenate multiple TS video files.
 #### Synopsis
 
 ```console
-$ ffmpeg-cattsfile [-y] <infile> [..] <outfile>
+$ ffmpeg-cattsfile [-y] INFILE... OUTFILE
 ```
 
 #### Options
@@ -75,19 +75,21 @@ Convert one or several video files.
 #### Synopsis
 
 ```console
-$ ffmpeg-convert [-c <string>] [-o <option> [value]] [-e <ext>] [-y] <infile> [..]
+$ ffmpeg-convert [OPTION]... INFILE...
 ```
 
 #### Options
 
-**-c** _string_
+**-c**, **--cropdetect**=_value_
 : Set cropdetect to remove black borders (default: `auto`)
 
-**-o** _option_ [_value_]
+**-o**, **--option**=_value_
 : Set `ffmpeg` option and value (can be used multiple times)
 
-**-e** _ext_
+**-e**, **--extension**=_value_
 : Set file extension of output file (default: `mp4`)
+
+**-n**, **--name**=_value_
 
 **-y**, **--yes**
 : Overwrite existing files
@@ -121,7 +123,7 @@ Detect black margins of one or several video files.
 #### Synopsis
 
 ```console
-$ ffmpeg-cropdetect [--skip=VALUE] [--time=VALUE] [--cropdetect=LIMIT:ROUND:SKIP:RESET] INFILE...
+$ ffmpeg-cropdetect [OPTION]... INFILE...
 ```
 
 #### Options
@@ -143,7 +145,7 @@ Add a fade-in and fade-out effect to one or several video files.
 #### Synopsis
 
 ```console
-$ ffmpeg-fadeinout [--time=VALUE] [--mode=VALUE] [--stream=VALUE] [--name=VALUE] [--yes] INFILE...
+$ ffmpeg-fadeinout [OPTION]... INFILE...
 ```
 
 #### Options
@@ -171,7 +173,7 @@ Enhance gamma and saturation of one or several video files.
 #### Synopsis
 
 ```console
-$ ffmpeg-gamma [--gamma=VALUE] [--saturation=VALUE] [--yes] INFILE...
+$ ffmpeg-gamma [OPTION]... INFILE...
 ```
 
 #### Options
@@ -196,7 +198,7 @@ Add a watermark to a certain position in one or several media files.
 #### Synopsis
 
 ```console
-$ ffmpeg-watermark [--anchor=VALUE] [--scale=WIDTH:HEIGHT] [--margin=VALUE] [--opacity=VALUE] [--rotation=VALUE] [--yes] WATERMARK INFILE...
+$ ffmpeg-watermark [OPTION]... WATERMARK INFILE...
 ```
 
 #### Options

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Created:         Mo 2019-08-26 11:18:48 CEST
-# Last Modified:   Thu 2023-09-28 23:20:07 CEST
+# Last Modified:   Fri 2023-09-29 00:09:03 CEST
 #
 # ffmpeg-audioshift:
 #   Delay the audio or video stream of one or several video files.
@@ -12,7 +12,7 @@ set -euo pipefail
 usage() {
 >&2 cat << EOF
 
-Usage: ffmpeg-audioshift [OPTION] INFILE...
+Usage: ffmpeg-audioshift [OPTION]... INFILE...
 
 Delay the audio or video stream of one or several video files.
 

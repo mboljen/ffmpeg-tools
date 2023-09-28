@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Created:         So 2020-06-28 10:29:34 CEST
-# Last Modified:   Thu 2023-09-28 23:22:39 CEST
+# Last Modified:   Fri 2023-09-29 00:08:42 CEST
 #
 # ffmpeg-fadeinout:
 #    Add a fade-in and fade-out effect to one or several video files.
@@ -12,7 +12,7 @@ set -euo pipefail
 usage() {
 >&2 cat << EOF
 
-Usage: ffmpeg-fadeinout [OPTION] INFILE...
+Usage: ffmpeg-fadeinout [OPTION]... INFILE...
 
 Add a fade-in and fade-out effect to one or several video files.
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Created:         Do 2023-03-16 12:35:18 CET
-# Last Modified:   Thu 2023-09-28 23:19:53 CEST
+# Last Modified:   Fri 2023-09-29 00:09:22 CEST
 #
 # ffmpeg-gamma:
 #   Enhance gamma and saturation of one or several video files.
@@ -12,7 +12,7 @@ set -euo pipefail
 usage() {
 >&2 cat << EOF
 
-Usage: ffmpeg-gamma [OPTION] INFILE...
+Usage: ffmpeg-gamma [OPTION]... INFILE...
 
 Enhance gamma and saturation of one or several video files.
 
