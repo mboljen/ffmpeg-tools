@@ -1,69 +1,81 @@
 #!/usr/bin/env bash
 #
 # Created:         Mo 2020-05-11 01:00:51 CEST
-# Last Modified:   Mo 2023-08-07 09:51:29 CEST
+# Last Modified:   Thu 2023-09-28 23:21:49 CEST
 #
 # ffmpeg-cropdetect:
 #   Detect black margins of one or several video files.
+#
+set -euo pipefail
 
 # Help text
-usage () {
-cat << EOF
+usage() {
+>&2 cat << EOF
 
-Usage: ffmpeg-cropdetect [options] <infile> [..]
+Usage: ffmpeg-cropdetect [OPTION] INFILE...
 
-OPTIONS:
-  -s <time>    Skip time (default: 2% of total time)
-  -t <time>    Scan time (default: 5% of total time)
-  -c <string>  FFmpeg's cropdetect filter (limit:round:skip:reset)
-                  limit = black threshold (default: 24)
-                  round = output resolution divisor (default: 16)
-                  skip  = inital frames skipped (default: 2)
-                  reset = frames to restart detection process (default: 0)
-  -h           Show this help message
+Detect black margins of one or several video files.
+
+Options:
+  -s, --skip=VALUE        Skip time (default: 2% of total time)
+  -t, --time=VALUE        Scan time (default: 5% of total time)
+  -c, --cropdetect=VALUE  Set cropdetect filter (LIMIT:ROUND:SKIP:RESET)
+                          LIMIT = black threshold (default: 24)
+                          ROUND = output resolution divisor (default: 16)
+                          SKIP  = inital frames skipped (default: 2)
+                          RESET = frames to restart detection process (default: 0)
+  -h, --help              Show this help message and exit
 EOF
 }
+
+# Echo error messages on STDERR
+echoerr() { cat <<< "$@" 1>&2; }
 
 # Initialization
 FFMPEG=$(command -v ffmpeg)
 FFPROBE=$(command -v ffprobe)
 
-# Defaults of ffmpeg's cropdetect option "<limit>:<round>:<skip>"
-CROPDETECT="24:16:2:0"
-
-# Process options
-while getopts "s:t:c:h" OPTION
-do
-    case "$OPTION"
-    in
-        s) SS="$OPTARG"
-           ;;
-        t) T="$OPTARG"
-           ;;
-        c) CROPDETECT="$OPTARG"
-           ;;
-        h) usage
-           exit 0
-           ;;
-       \?) usage
-           exit 1
-           ;;
-    esac
-done
-
 # Check if ffmpeg is available
 if [ ! -x "${FFMPEG}" ]
 then
-    echo "$0: ffmpeg not found, probably not installed"
+    echoerr "ffmpeg not found, probably not installed"
     exit 1
 fi
 
 # Check if ffprobe is available
 if [ ! -x "${FFPROBE}" ]
 then
-    echo "$0: ffprobe not found, probably not installed"
+    echoerr "ffprobe not found, probably not installed"
     exit 1
 fi
+
+# Defaults of FFmpeg cropdetect option "LIMIT:ROUND:SKIP:RESET"
+CROPDETECT='24:16:2:0'
+
+# Parse command line options
+args=$(getopt -a -o s:t:c:h --long skip:,time:,cropfilter:,help -- "$@")
+if [[ $? -gt 0 ]]
+then
+    echoerr "Error processing command line options"
+    usage
+    exit 1
+fi
+
+# Process command line options
+eval set -- ${args}
+while :
+do
+    case $1 in
+      -s | --skip)        SS=$2          ; shift 2 ;;
+      -t | --time)        TIME=$2        ; shift 2 ;;
+      -c | --cropdetect)  CROPDETECT=$2  ; shift 2 ;;
+      -h | --help)        usage          ; shift   ; exit 0 ;;
+      # -- means the end of the arguments; drop this, and break out of the while loop
+      --) shift; break ;;
+       *) echoerr "Unsupported option: $1"; usage ; shift; exit 1 ;;
+    esac
+done
+
 
 # Regular expressions for timestamps
 regex1='^[0-9]+(\.[0-9]+)?$'
@@ -85,37 +97,34 @@ then
 elif [ -n "$SS" ]
 then
     # Invalid pattern match, SS is not null and not empty
-    echo "$0: Invalid skip time '$SS'"
+    echoerr "Invalid skip time '$SS'"
     exit 2
 fi
 
 # Pattern matching for T
-if [[ "$T" =~ $regex1 ]] || [[ "$T" =~ $regex2 ]] || [[ "$T" =~ $regex3 ]]
+if [[ "$TIME" =~ $regex1 ]] || [[ "$TIME" =~ $regex2 ]] || [[ "$TIME" =~ $regex3 ]]
 then
     # Convert HH:MM:SS.sss to seconds
-     T=$(to_seconds "$T")
+     TIME=$(to_seconds "$TIME")
 
-elif [ -n "$T" ]
+elif [ -n "$TIME" ]
 then
     # Invalid pattern match, T is not null and not empty
-    echo "$0: Invalid scan time '$T'"
+    echoerr "Invalid scan time '$TIME'"
     exit 3
 fi
 
 # Pattern matching for CROPDETECT
 if [[ ! "${CROPDETECT}" =~ ^[0-9]+(((:[0-9]+)?:[0-9]+)?:[0-9]+)?$ ]]
 then
-    echo "$0: Invalid cropdetect value '${CROPDETECT}'"
+    echoerr "Invalid cropdetect value '${CROPDETECT}'"
     exit 4
 fi
-
-# Skip options and shift index
-shift $((OPTIND-1))
 
 # Check number of arguments
 if [ "$#" -eq 0 ]
 then
-    echo "$0 requires at least 1 argument"
+    echoerr "Expecting at least 1 argument"
     usage
     exit 1
 fi
@@ -131,7 +140,7 @@ do
     # Skip file if not existing
     if [ ! -f "${INFILE}" ]
     then
-        echo "$0: ${INFILE} is not a valid file, skipped"
+        echoerr "${INFILE} is not a valid file, skipped"
         continue
     fi
 
@@ -141,12 +150,12 @@ do
     # Check duration
     if (( $(echo "$dur <= 0" | bc -l) ))
     then
-        echo "${INFILE} has non-positive duration $dur ... skipped"
+        echoerr "${INFILE} has non-positive duration $dur ... skipped"
         continue
     fi
 
     # Auto-define timeframe
-    if [ -z "$SS" ] && [ -z "$T" ]
+    if [ -z "$SS" ] && [ -z "$TIME" ]
     then
 
         if (( $(echo "$dur <= 60"| bc -l) ))
@@ -160,7 +169,7 @@ do
             T1=$(echo "$dur*0.05" | bc -l)
         fi
 
-    elif [ -z "$T" ]
+    elif [ -z "$TIME" ]
     then
         # Empty termination time
         T0="$SS"
@@ -169,13 +178,13 @@ do
     elif [ -z "$SS" ]
     then
         # Empty starting time
-        T0=$(echo "$T-$dur*0.03" | bc -l)
-        T1="$T"
+        T0=$(echo "$TIME-$dur*0.03" | bc -l)
+        T1="$TIME"
 
     else
         # Defined starting and termination time
         T0="$SS"
-        T1="$T"
+        T1="$TIME"
 
     fi
 
@@ -188,7 +197,7 @@ do
     #echo "T1 = $T1"
 
     # Grep crop geometry
-    result=$("${FFMPEG}" -i "${INFILE}" -ss "$T0" -t "$T1" -vsync vfr -vf "fps=1/2,cropdetect=$CROPDETECT" -f null - 2>&1 | awk '/crop/ { print $NF }' | tr ' ' '\n' | sort | uniq -c | sort -n | tail -1 | awk '{ print $NF }')
+    result=$("${FFMPEG}" -i "${INFILE}" -ss "$T0" -t "$T1" -vsync vfr -vf "fps=1/2,cropdetect=${CROPDETECT}" -f null - 2>&1 | awk '/crop/ { print $NF }' | tr ' ' '\n' | sort | uniq -c | sort -n | tail -1 | awk '{ print $NF }')
 
     # Check result string
     [ -n "$result" ] && echo "$result" || exit 5

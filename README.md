@@ -42,13 +42,13 @@ $ ffmpeg-audioshift [-a <time>] [-v <time>] [-y] <infile> [..]
 
 #### Options
 
-**-a** _time_
+**-a**, **--audio**=_time_
 : Delay audio stream of file `infile` with respect to video by `time` seconds
 
-**-v** _time_
+**-v**, **--video**=_time_
 : Delay video stream of file `infile` with respect to audio by `time` seconds
 
-**-y**
+**-y**, **--yes**
 : Overwrite existing files
 
 
@@ -64,7 +64,7 @@ $ ffmpeg-cattsfile [-y] <infile> [..] <outfile>
 
 #### Options
 
-**-y**
+**-y**, **--yes**
 : Overwrite existing files
 
 
@@ -89,7 +89,7 @@ $ ffmpeg-convert [-c <string>] [-o <option> [value]] [-e <ext>] [-y] <infile> [.
 **-e** _ext_
 : Set file extension of output file (default: `mp4`)
 
-**-y**
+**-y**, **--yes**
 : Overwrite existing files
 
 #### Default settings
@@ -106,6 +106,9 @@ OPTS=-map 0:v -map 0:a? -c:v h264 -crf 23 -c:a copy
 # Default file extension for output files
 EXT=mp4
 
+# Default output filename suffix
+NAME=convert
+
 # Permission to overwrite existing files
 YES=0
 ```
@@ -118,18 +121,18 @@ Detect black margins of one or several video files.
 #### Synopsis
 
 ```console
-$ ffmpeg-cropdetect [-s <time>] [-t <time>] [-c <limit>:<round>:<skip>:<reset>] <infile> [..]
+$ ffmpeg-cropdetect [--skip=VALUE] [--time=VALUE] [--cropdetect=LIMIT:ROUND:SKIP:RESET] INFILE...
 ```
 
 #### Options
 
-**-s** _skiptime_
-: Set the number of seconds skipped from the beginning.  The default of _skiptime_ is 2 percent of the total duration of the video.  
+**-s**, **--skip**=_value_
+: Set the number of seconds skipped from the beginning.  The default of _value_ is 2 percent of the total duration of the video.  
 
-**-t** _scantime_
-: Set the number of seconds to be scanned.  The default of _scantime_ is 5 percent of the total duration of the video.  
+**-t**, **--time**=_value_
+: Set the number of seconds to be scanned.  The default of _value_ is 5 percent of the total duration of the video.
 
-**-c** _limit_:_round_:_skip_:_reset_
+**-c**, **--cropdetect**=_limit_:_round_:_skip_:_reset_
 : set the `cropdetect` filter of **ffmpeg** (default: "24:16:2:0").
 
 
@@ -140,24 +143,24 @@ Add a fade-in and fade-out effect to one or several video files.
 #### Synopsis
 
 ```console
-$ ffmpeg-fadeinout [-t <time>] [-m <mode>] [-s <stream>] [-n <suffix>] [-y] <infile> [..]
+$ ffmpeg-fadeinout [--time=VALUE] [--mode=VALUE] [--stream=VALUE] [--name=VALUE] [--yes] INFILE...
 ```
 
 #### Options
 
-**-t** _time_
+**-t**, **--time**=_value_
 : Set fade duration in seconds (default: `5`)
 
-**-m** _mode_
-: Set fade mode: fade-in only (`i`), fade-out only (`o`), both (default: `b`).
+**-m**, **--mode**=_value_
+: Set fade mode: fade-in only (`i`), fade-out only (`o`), both (default: `b`)
 
-**-s** _stream_
+**-s**, **--stream**=_value_
 : Fade video stream only (`v`), audio stream only ( `a`), or both (default: `b`)
 
-**-n** _suffix_
-: Set file basename suffix (default: `-fadeinout`)
+**-n**, **--name**=_value_
+: Set default output filename suffix (default: `fadeinout`)
 
-**-y**
+**-y**, **--yes**
 : Overwrite existing files
 
 
@@ -168,18 +171,21 @@ Enhance gamma and saturation of one or several video files.
 #### Synopsis
 
 ```console
-$ ffmpeg-gamma [-g <gamma>] [-s <saturation>] [-y] <infile> [..]
+$ ffmpeg-gamma [--gamma=VALUE] [--saturation=VALUE] [--yes] INFILE...
 ```
 
 #### Options
 
-**-g** _gamma_
+**-g**, **--gamma**=_value_
 : Set gamma value (default: `1.0`)
 
-**-s** _saturation_
-: Set saturation level (default: "1.0")
+**-s**, **--saturation**=_value_
+: Set saturation level (default: `1.0`)
 
-**-y**
+**-n**, **--name**=_value_
+: Set default output filename suffix (default: `gamma`)
+
+**-y**, **--yes**
 : Overwrite existing files
 
 
@@ -190,27 +196,30 @@ Add a watermark to a certain position in one or several media files.
 #### Synopsis
 
 ```console
-$ ffmpeg-watermark [-a <anchor>] [-s <number>] [-m <pixel>] [-o <opacity>] [-r <angle>] [-y] <watermark> <infile> [..]
+$ ffmpeg-watermark [--anchor=VALUE] [--scale=WIDTH:HEIGHT] [--margin=VALUE] [--opacity=VALUE] [--rotation=VALUE] [--yes] WATERMARK INFILE...
 ```
 
 #### Options
 
-**-a** _anchor_
+**-a**, **--anchor**=_value_
 : Set anchor of watermark (default: `ne`)
 
-**-s** _number_
+**-s**, **--scale**=_width_:_height_
 : Scale watermark according to larger dimension of media file (default: `0`)
 
-**-m** _pixel_
-: Set margin around watermark (default: `0`)
+**-m**, **--margin**=_value_
+: Set margin around watermark in pixels (default: `0`)
 
-**-o** _opacity_
+**-o**, **--opacity**=_value_
 : Set opacity of watermark (default: `1`)
 
-**-r** _angle_
+**-r**, **--rotate**=_value_
 : Set clockwise rotation angle of watermark in degrees (default: `0`)
 
-**-y**
+**-n**, **--name**=_value_
+: Set default output filename suffix (default: `watermark`)
+
+**-y**, **--yes**
 : Overwrite existing files
 
 

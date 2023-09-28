@@ -1,111 +1,126 @@
 #!/usr/bin/env bash
 #
 # Created:         So 2020-06-28 10:29:34 CEST
-# Last Modified:   Mo 2023-08-07 09:51:27 CEST
+# Last Modified:   Thu 2023-09-28 23:22:39 CEST
 #
 # ffmpeg-fadeinout:
 #    Add a fade-in and fade-out effect to one or several video files.
+#
+set -euo pipefail
 
 # Help text
 usage() {
-cat << EOF
+>&2 cat << EOF
 
-Usage: ffmpeg-fadeinout [options] <infile> [..]
+Usage: ffmpeg-fadeinout [OPTION] INFILE...
 
-OPTIONS:
-   -t <time>     Fade duration in seconds (default: 5)
-   -m <mode>     Fade-in only (i), fade-out only (o), both (default:b)
-   -s <stream>   Video stream only (v), audio stream only (a), both (default:b)
-   -n <suffix>   File basename suffix (default: "_fadeinout")
-   -y            Overwrite existing files
-   -h            Show this message
+Add a fade-in and fade-out effect to one or several video files.
+
+Options:
+  -t, --time=VALUE    Fade duration in seconds (default: 5)
+  -m, --mode=VALUE    Fade-in only (i), fade-out only (o), both (default: 'b')
+  -s, --stream=VALUE  Video stream only (v), audio stream only (a), both (default:b)
+  -n, --name=VALUE    Set output filename suffix (default: 'fadeinout')
+  -y, --yes           Overwrite existing files
+  -h, --help          Show this help message and exit
 EOF
 }
 
-# Defaults
-FADEDUR=5
-MODE='b'
-STREAM='b'
-YES=0
-NAME='-fadeinout'
+# Echo error messages on STDERR
+echoerr() { cat <<< "$@" 1>&2; }
+
+# Initialization
 FFMPEG=$(command -v ffmpeg)
 FFPROBE=$(command -v ffprobe)
-
-# Process options
-while getopts "t:m:s:n:yh" OPTION
-do
-    case "${OPTION}"
-    in
-        t)
-            FADEDUR="${OPTARG}"
-            ;;
-        m)
-            MODE="${OPTARG}"
-            ;;
-        s)
-            STREAM="${OPTARG}"
-            ;;
-        n)
-            NAME="${OPTARG}"
-            ;;
-        y)
-            YES=1
-            ;;
-        h|\?)
-            usage
-            exit 0
-            ;;
-    esac
-done
 
 # Check if ffmpeg is available
 if [ ! -x "${FFMPEG}" ]
 then
-    echo "$0: ffmpeg not found, probably not installed"
+    echoerr "ffmpeg not found, probably not installed"
     exit 1
 fi
 
 # Check if ffprobe is available
 if [ ! -x "${FFPROBE}" ]
 then
-    echo "$0: ffprobe not found, probably not installed"
+    echoerr "ffprobe not found, probably not installed"
     exit 1
 fi
+
+
+# Defaults
+FADEDUR=5
+MODE='b'
+STREAM='b'
+YES=0
+NAME='fadeinout'
+
+# Parse command line options
+args=$(getopt -a -o t:m:s:n:yh --long time:,mode:,stream:,name:,yes,help -- "$@")
+if [[ $? -gt 0 ]]
+then
+    echoerr "Error processing command line options"
+    usage
+    exit 1
+fi
+
+# Process command line options
+eval set -- ${args}
+while :
+do
+    case $1 in
+      -t | --time)        FADEDUR=$2 ; shift 2 ;;
+      -m | --mode)        MODE=$2    ; shift 2 ;;
+      -s | --stream)      STREAM=$2  ; shift 2 ;;
+      -n | --name)        NAME=$2    ; shift 2 ;;
+      -y | --yes)         YES=1      ; shift   ;;
+      -h | --help)        usage      ; shift   ; exit 0 ;;
+      # -- means the end of the arguments; drop this, and break out of the while loop
+      --) shift; break ;;
+       *) echoerr "Unsupported option: $1"; usage ; shift; exit 1 ;;
+    esac
+done
+
 
 # Check FADEDUR being a positive floating point number
 result=$(echo "scale=2;${FADEDUR}" | bc -q 2>/dev/null)
 stat=$?
 if [[ "$stat" -eq 0 && -z "$result" ]]
 then
-    echo "Fade duration not a floating point number: ${FADEDUR}"
+
+    echoerr "Fade duration not a floating point number: ${FADEDUR}"
     exit 1
+
 elif (( $(echo "${FADEDUR} < 0" | bc -l) ))
 then
-    echo "Fade duration not positive: ${FADEDUR}"
+
+    echoerr "Fade duration not positive: ${FADEDUR}"
     exit 1
+
 fi
 
 # Check MODE flag
 if [ "${MODE}" != "b" ] && [ "${MODE}" != "i" ] && [ "${MODE}" != "o" ]
 then
-    echo "Invalid mode: ${MODE}"
+
+    echoerr "Invalid mode: ${MODE}"
     exit 1
+
 fi
 
 # Check STREAM flag
 if [ "${STREAM}" != "b" ] && [ "${STREAM}" != "v" ] && [ "${STREAM}" != "a" ]
 then
-    echo "Invalid stream: ${STREAM}"
-    exit 1
-fi
 
-# Skip options and shift index
-shift $((OPTIND-1))
+    echoerr "Invalid stream: ${STREAM}"
+    exit 1
+
+fi
 
 # Check number of arguments
 if [ "$#" -eq 0 ]
 then
-    echo "$0 requires at least 1 argument"
+    echoerr "Expecting at least 1 argument"
     usage
     exit 1
 fi
@@ -116,7 +131,7 @@ do
     # Check if file exists
     if ! [ -f "${f}" ]
     then
-        echo "Skipping ${f}, file does not exist"
+        echoerr "Skipping ${f}, file does not exist"
         continue
     fi
 
@@ -127,19 +142,19 @@ do
     # Check OFFSET not being negative
     if (( $(echo "${OFFSET} < 0" | bc -l) ))
     then
-        echo "Skipping ${f}, negative offset ${OFFSET} ..."
+        echoerr "Skipping ${f}, negative offset ${OFFSET} ..."
         continue
     fi
 
     # Assemble output filename
     FNAME=$(rev <<< "$f" | cut -d. -f2- | rev)
     FEXT=$(rev <<< "$f" | cut -d. -f1 | rev)
-    FNEW="${FNAME}${NAME}.${FEXT}"
+    FNEW="${FNAME}-${NAME}.${FEXT}"
 
     # Skip ffmpeg if output file exists
     if [ -f "${FNEW}" ] && [ ${YES} -eq 0 ]
     then
-        echo "Skipping ${f}, output file ${FNEW} exists"
+        echoerr "Skipping ${f}, output file ${FNEW} exists"
         continue
     fi
 

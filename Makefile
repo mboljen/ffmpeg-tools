@@ -35,7 +35,7 @@ man:
 $(MAN): man
 
 $(MAN_DIR)/%.1.gz: bin/%
-	help2man $< | gzip -9 > $@
+	help2man --no-discard-stderr --version-string=${VERSION} $< | gzip -9 > $@
 
 sign: $(SIG)
 

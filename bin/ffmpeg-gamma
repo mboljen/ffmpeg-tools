@@ -1,24 +1,32 @@
 #!/usr/bin/env bash
 #
 # Created:         Do 2023-03-16 12:35:18 CET
-# Last Modified:   Mo 2023-08-07 09:43:17 CEST
+# Last Modified:   Thu 2023-09-28 23:19:53 CEST
 #
 # ffmpeg-gamma:
 #   Enhance gamma and saturation of one or several video files.
+#
+set -euo pipefail
 
 # Help text
-usage () {
-cat << EOF
+usage() {
+>&2 cat << EOF
 
-Usage: ffmpeg-gamma [options] <infile> [..]
+Usage: ffmpeg-gamma [OPTION] INFILE...
 
-OPTIONS:
-   -g <gamma>       Set gamma value (default: 1.0)
-   -s <saturation>  Set saturation level (default: 1.0)
-   -y               Overwrite existing files
-   -h               Show this help message
+Enhance gamma and saturation of one or several video files.
+
+Options:
+  -g, --gamma=VALUE       Set gamma value (default: 1.0)
+  -s, --saturation=VALUE  Set saturation level (default: 1.0)
+  -n, --name=VALUE        Set output filename suffix (default: 'gamma')
+  -y, --yes               Overwrite existing files
+  -h, --help              Show this help message and exit
 EOF
 }
+
+# Echo error messages on STDERR
+echoerr() { cat <<< "$@" 1>&2; }
 
 # Initialization
 FFMPEG=$(command -v ffmpeg)
@@ -26,39 +34,44 @@ FFMPEG=$(command -v ffmpeg)
 # Check if ffmpeg is available
 if [ ! -x "${FFMPEG}" ]
 then
-    echo "$0: ffmpeg not found, probably not installed"
+    echoerr "ffmpeg not found, probably not installed"
     exit 1
 fi
 
 GAMMA=1.0
 SATURATION=1.0
 YES=0
+NAME='gamma'
 
-while getopts "g:s:yh" OPTION
+# Parse command line options
+args=$(getopt -a -o g:s:n:yh --long gamma:,saturation:,name:,yes,help -- "$@")
+if [[ $? -gt 0 ]]
+then
+    echoerr "Error processing command line options"
+    usage
+    exit 1
+fi
+
+# Process command line options
+eval set -- ${args}
+while :
 do
-    case "${OPTION}"
-    in
-        g) GAMMA="${OPTARG}"
-           ;;
-        s) SATURATION="${OPTARG}"
-           ;;
-        y) YES=1
-           ;;
-        h) usage
-           exit 0
-           ;;
-       \?) usage
-           exit 1
-           ;;
+    case $1 in
+      -g | --gamma)       GAMMA=$2      ; shift 2 ;;
+      -s | --saturation)  SATURATION=$2 ; shift 2 ;;
+      -n | --name)        NAME=$2       ; shift 2 ;;
+      -y | --yes)         YES=1         ; shift   ;;
+      -h | --help)        usage         ; shift   ; exit 0 ;;
+      # -- means the end of the arguments; drop this, and break out of the while loop
+      --) shift; break ;;
+       *) echoerr "Unsupported option: $1"; usage ; shift; exit 1 ;;
     esac
 done
-
-shift $((OPTIND-1))
 
 # Check number of arguments
 if [ "$#" -eq 0 ]
 then
-    echo "$0 requires at least 1 argument"
+    echoerr "Expecting at least 1 argument"
     usage
     exit 1
 fi
@@ -73,17 +86,17 @@ do
     #
     if [ ! -f "${INFILE}" ]
     then
-        echo "$0: ${INFILE} is not a valid file, skipped"
+        echoerr "${INFILE} is not a valid file, skipped"
         continue
     fi
 
     tmp=$(basename -- "${INFILE}")
-    OUTFILE="${tmp%.*}-gamma.${tmp##*.}"
+    OUTFILE="${tmp%.*}-${NAME}.${tmp##*.}"
 
     #
     if [ -f "${OUTFILE}" ] && [ ${YES} -ne 1 ]
     then
-        echo "$0: ${OUTFILE} already exists, skipped"
+        echoerr "${OUTFILE} already exists, skipped"
         continue
     fi
 

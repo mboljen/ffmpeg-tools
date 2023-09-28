@@ -1,58 +1,73 @@
 #!/usr/bin/env bash
 #
 # Created:         Mo 2019-08-26 11:18:48 CEST
-# Last Modified:   Mo 2023-08-07 09:59:09 CEST
+# Last Modified:   Thu 2023-09-28 23:20:07 CEST
 #
 # ffmpeg-audioshift:
 #   Delay the audio or video stream of one or several video files.
+#
+set -euo pipefail
 
 # Help text
 usage() {
-cat << EOF
+>&2 cat << EOF
 
-Usage: ffmpeg-audioshift [options] <infile> [..]
+Usage: ffmpeg-audioshift [OPTION] INFILE...
 
-OPTIONS:
-   -a <time>   Delay audio track in seconds (default: 0)
-   -v <time>   Delay video track in seconds (default: 0)
-   -y          Overwrite existing files
-   -h          Show this help message
+Delay the audio or video stream of one or several video files.
+
+Options:
+  -a, --audio=VALUE  Delay audio track in seconds (default: 0)
+  -v, --video=VALUE  Delay video track in seconds (default: 0)
+  -n, --name=VALUE   Set output filename suffix (default: 'audioshift')
+  -y, --yes          Overwrite existing files
+  -h, --help         Show this help message and exit
 EOF
 }
 
+# Echo error messages on STDERR
+echoerr() { cat <<< "$@" 1>&2; }
+
 # Initialization
 FFMPEG=$(command -v ffmpeg)
-TIME=0.0
-YES=0
-
-# Process options
-while getopts "a:v:yh" OPTION
-do
-    case "${OPTION}"
-    in
-        a)  TIME="${OPTARG}"
-            MAP="-map 0:v -map 1:a"
-            echo "Audio track will be delayed by ${TIME}"
-            ;;
-        v)  TIME="${OPTARG}"
-            MAP="-map 1:v -map 0:a"
-            echo "Video track will be delayed by ${TIME}"
-            ;;
-        y)  YES=1
-            ;;
-        h|\?)
-            usage
-            exit 0
-            ;;
-    esac
-done
 
 # Check availability of converter
 if [ ! -x "${FFMPEG}" ]
 then
-    echo "$0: ffmpeg not found, probably not installed"
+    echoerr "ffmpeg not found, probably not installed"
     exit 1
 fi
+
+# Defaults
+TIME=0.0
+YES=0
+NAME='audioshift'
+
+# Parse command line options
+args=$(getopt -a -o a:v:n:hy --long audio:,video:,name:,help,yes -- "$@")
+if [[ $? -gt 0 ]]
+then
+    echoerr "Error processing command line options"
+    usage
+    exit 1
+fi
+
+# Process command line options
+eval set -- ${args}
+while :
+do
+    case $1 in
+      -a | --audio)  TIME=$2 ; shift 2 ; MAP="-map 0:v -map 1:a" ;;
+      -v | --video)  TIME=$2 ; shift 2 ; MAP="-map 1:v -map 0:a" ;;
+      -n | --name)   NAME=$2 ; shift 2 ;;
+      -y | --yes)    YES=1   ; shift   ;;
+      -h | --help)   usage   ; shift   ; exit 0 ;;
+      # -- means the end of the arguments; drop this, and break out of the while loop
+      --) shift; break ;;
+       *) echoerr "Unsupported option: $1"; usage ; shift; exit 1 ;;
+    esac
+done
+
 
 # Require offset to be non-zero
 if (( $( echo "${TIME} == 0" | bc -l ) ))
@@ -61,13 +76,10 @@ then
     exit 0
 fi
 
-# Skip options and shift index
-shift $((OPTIND-1))
-
 # Check number of arguments
 if [ "$#" -eq 0 ]
 then
-    echo "$0 requires at least 1 argument"
+    echoerr "Expecting at least 1 argument"
     usage
     exit 1
 fi
@@ -83,7 +95,7 @@ do
         echo -e "\n### Processing ${INFILE} ... please wait ...\n"
 
         # Process file
-        "${FFMPEG}" -y -i "${INFILE}" -itsoffset "${TIME}" -i "${INFILE}" "${MAP}" -vcodec copy -acodec copy "${INFILE%.*}-audioshift.${INFILE##*.}"
+        "${FFMPEG}" -y -i "${INFILE}" -itsoffset "${TIME}" -i "${INFILE}" "${MAP}" -vcodec copy -acodec copy "${INFILE%.*}-${NAME}.${INFILE##*.}"
 
     else
 

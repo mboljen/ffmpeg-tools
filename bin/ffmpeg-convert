@@ -1,34 +1,57 @@
 #!/usr/bin/env bash
 #
 # Created:         So 2023-08-06 01:34:08 CEST
-# Last Modified:   Mo 2023-08-07 10:33:02 CEST
+# Last Modified:   Thu 2023-09-28 23:20:38 CEST
 #
 # ffmpeg-convert:
 #   Convert one or several video files.
+#
+set -euo pipefail
 
 # Help text
-usage () {
-cat << EOF
+usage() {
+>&2 cat << EOF
 
-Usage: ffmpeg-convert [options] <infile> [..]
+Usage: ffmpeg-convert [OPTION] INFILE...
+
+Convert one or several video files.
 
 OPTIONS:
-  -c <string>          Set cropdetect to remove black borders (default: auto)
-  -o <option> [value]  Set ffmpeg option and value (can be used multiple times)
-  -e <ext>             Set file extension of output file (default: mp4)
-  -y                   Overwrite existing files
-  -h                   Show this help message
+  -c, --crop=VALUE             Set cropdetect to remove black borders (default: auto)
+  -o, --option=OPTION [VALUE]  Set FFmpeg option and value (can be used multiple times)
+  -e, --extension=VALUE        Set file extension of output file (default: 'mp4')
+  -n, --name=VALUE             Set output filename suffix (default: 'convert')
+  -y, --yes                    Overwrite existing files
+  -h, --help                   Show this help message and exit
 EOF
 }
+
+# Echo error messages on STDERR
+echoerr() { cat <<< "$@" 1>&2; }
 
 # Initialization
 FFMPEG=$(command -v ffmpeg)
 CROPDETECT=$(command -v ffmpeg-cropdetect)
 
+# Check if ffmpeg is available
+if [ ! -x "${FFMPEG}" ]
+then
+    echoerr "ffmpeg not found, probably not installed"
+    exit 1
+fi
+
+# Check if ffmpeg-cropdetect is available
+if [ ! -x "${CROPDETECT}" ]
+then
+    echoerr "ffmpeg-cropdetect is not found, probably not installed"
+    exit 1
+fi
+
 # Defaults
 CROP=
 EXT=
-YES=
+YES=0
+NAME=convert
 OPTS=()
 
 # Resolve folder where script resides
@@ -41,53 +64,58 @@ do
     then
         confget -c -f "$file" CROP && CROP=$(confget -nf "$file" CROP)
         confget -c -f "$file" OPTS && mapfile -t OPTS < <( confget -nf "$file" OPTS )
-        confget -c -f "$file" EXT  && EXT=$(confget -nf "$file" EXT)
-        confget -c -f "$file" YES  && YES=$(confget -nf "$file" YES)
+        confget -c -f "$file" EXT  &&  EXT=$(confget -nf "$file" EXT)
+        confget -c -f "$file" NAME && NAME=$(confget -nf "$file" NAME)
+        confget -c -f "$file" YES  &&  YES=$(confget -nf "$file" YES)
     fi
 done
 
 # Flag to mark cleared OPTS array
 OPTSCLR=0
 
-# Process options
-while getopts "c:o:e:yh" OPTION
+# Parse command line options
+args=$(getopt -a -o c:o:e:yh --long cropdetect:,option:,extension:,yes,help -- "$@")
+if [[ $? -gt 0 ]]
+then
+    echoerr "Error processing command line options"
+    usage
+    exit 1
+fi
+
+# Process command line options
+eval set -- ${args}
+while :
 do
-    case "$OPTION"
-    in
-        c)  CROP="$OPTARG"
-            ;;
-        o)  # Check if OPTS array has been cleared; options from command line overwrite
-            if [ "$OPTSCLR" -eq 0 ]
-            then
-                OPTS=()
-                OPTSCLR=1
-            fi
-            OPTS+=("$OPTARG")
-            # See if next argument is an option, and, if not,
-            # add it to the pass-through array and skip it
-            if [[ ${@:OPTIND:1} != -* ]]
-            then
-                OPTS+=("${@:OPTIND:1}" )
-                (( ++OPTIND ))
-            fi
-            ;;
-        e)  EXT="$OPTARG"
-            ;;
-        y)  YES=1
-            ;;
-        h)  usage
-            exit 0
-            ;;
-       \?)  usage
-            exit 1
-            ;;
+    case $1 in
+      -c | --cropdetect)  CROP=$2 ; shift 2 ;;
+      -o | --option)
+
+           # Check if OPTS array has been cleared;
+           # Options from command line overwrite
+           if [ "$OPTSCLR" -eq 0 ]
+           then
+               OPTS=()
+               OPTSCLR=1
+           fi
+           OPTS+=($2)
+           shift 2
+           ;;
+
+      -e | --extension)   EXT=$2  ; shift 2 ;;
+      -n | --name)        NAME=$2 ; shift 2 ;;
+      -y | --yes)         YES=1   ; shift   ;;
+      -h | --help)        usage   ; shift   ; exit 0 ;;
+      # -- means the end of the arguments; drop this, and break out of the while loop
+      --) shift; break ;;
+       *) echoerr "Unsupported option: $1"; usage ; shift; exit 1 ;;
     esac
 done
+
 
 # Use default crop
 if [ -z "${CROP}" ]
 then
-    CROP=auto
+    CROP='auto'
 fi
 
 # Use default FFmpeg's options
@@ -99,7 +127,7 @@ fi
 # Use default file extension
 if [ -z "${EXT}" ]
 then
-    EXT=mp4
+    EXT='mp4'
 fi
 
 if [ -z "${YES}" ]
@@ -107,34 +135,18 @@ then
     YES=0
 fi
 
-# Check if ffmpeg is available
-if [ ! -x "${FFMPEG}" ]
-then
-    echo "$0: ffmpeg not found, probably not installed"
-    exit 1
-fi
-
-# Check if ffmpeg-cropdetect is available
-if [ ! -x "${CROPDETECT}" ]
-then
-    echo "$0: cropdetect is not found, probably not installed"
-    exit 1
-fi
-
-# Skip options and shift index
-shift $((OPTIND-1))
-
 # Check number of arguments
 if [ "$#" -eq 0 ]
 then
-    echo "$0 requires at least 1 argument"
+    echoerr "Expecting at least 1 argument"
     usage
     exit 1
 fi
 
 # For debugging
 echo "CROP    = ${CROP}"
-echo "OPTS    = " "${OPTS[@]}"
+echo "OPTS    = ${OPTS[@]}"
+echo "NAME    = ${NAME}"
 echo "EXT     = ${EXT}"
 echo "YES     = ${YES}"
 
@@ -149,7 +161,7 @@ do
     # Skip file if not existing
     if [ ! -f "${INFILE}" ]
     then
-        echo "$0: ${INFILE} is not a valid file, skipped"
+        echoerr "${INFILE} is not a valid file, skipped"
         continue
     fi
 
@@ -159,7 +171,7 @@ do
     # Rename output file if it matches input filename
     if [ "${OUTFILE}" = "$INFILE" ]
     then
-        OUTFILE="${INFILE%.*}-new.${EXT}"
+        OUTFILE="${INFILE%.*}-${NAME}.${EXT}"
     fi
 
     echo "INFILE  = ${INFILE}"
@@ -168,7 +180,7 @@ do
     # Check if output file already exists
     if [ -f "$OUTFILE" ] && [ "${YES}" -eq 0 ]
     then
-        echo "Outputfile already exists ... skipped"
+        echoerr "Outputfile already exists ... skipped"
         continue
     fi
 
@@ -181,7 +193,7 @@ do
         cropopt=(-vf $(${CROPDETECT} "${INFILE}"))
         if [ $? -ne 0 ]
         then
-            echo "cropdetect failed with error code $?"
+            echoerr "cropdetect failed with error code $?"
             cropopt=()
         fi
     elif [ "${CROP}" = "no"       ] || \
@@ -195,7 +207,7 @@ do
         cropopt=(-vf \""${CROP}"\")
     fi
 
-    echo "CROPOPT = " "${cropopt[@]}"
+    echo "CROPOPT = ${cropopt[@]}"
 
     # Invoke FFmpeg
     "${FFMPEG}" -y -i "${INFILE}" ${cropopt[@]} ${OPTS[@]} "${OUTFILE}"
