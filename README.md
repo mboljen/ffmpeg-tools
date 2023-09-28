@@ -207,7 +207,7 @@ $ ffmpeg-watermark [OPTION]... WATERMARK INFILE...
 : Set anchor of watermark (default: `ne`)
 
 **-s**, **--scale**=_width_:_height_
-: Scale watermark according to larger dimension of media file (default: `0`)
+: Scale watermark according to larger dimension of media file (default: undefined)
 
 **-m**, **--margin**=_value_
 : Set margin around watermark in pixels (default: `0`)
