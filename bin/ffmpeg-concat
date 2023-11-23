@@ -1,0 +1,166 @@
+#!/usr/bin/env bash
+#
+# Created:
+# Last Modified:
+#
+# ffmpeg-concat:
+#    Concatenate multiple video files.
+#
+set -euo pipefail
+
+usage() {
+>&2 cat << EOF
+
+Usage: ffmpeg-concat [OPTION]... INFILE... OUTFILE
+
+Concatenate multiple video files.
+
+Options:
+  -m, --method=METHOD   Select concatanation method: filter (0), demuxer (1), protocol (2)
+  -y, --yes             Overwrite existing files
+  -h, --help            Show this help message and exit
+
+EOF
+}
+
+# Echo error message on STDERR
+echoerr() { cat <<< "$@" 1>&2; }
+
+# Initialization
+FFMPEG=$(command -v ffmpeg)
+
+# Check availability of ffmpeg
+if ! [ -x "$FFMPEG" ]
+then
+    echoerr "ffmpeg not found, probably not installed"
+    exit 1
+fi
+
+# Defaults
+YES=0
+METHOD=2
+
+# Parse command line options
+args=$(getopt -a -o m:hy --long method:,help,yes -- "$@")
+if [[ $? -gt 0 ]]
+then
+    echoerr "Error processing command line options"
+    usage
+    exit 1
+fi
+
+# Process command line options
+eval set -- ${args}
+while :
+do
+    case $1 in
+      -m | --method)  METHOD=$2; shift 2 ;;
+      -y | --yes)     YES=1 ;    shift   ;;
+      -h | --help)    usage ;    shift   ; exit 0 ;;
+      # -- means the end of the arguments; drop this, and break out of the while loop
+      --) shift; break ;;
+       *) echoerr "Unsupported option: $1"; usage ; shift; exit 1 ;;
+    esac
+done
+
+
+# Check number of arguments
+if [ "$#" -lt 2 ]
+then
+    echoerr "Expecting at least 3 arguments"
+    usage
+    exit 1
+fi
+
+# Get last argument
+OUTFILE="${!#}"
+
+# Check if output file exists
+if [ -f "$OUTFILE" ] && [ "$YES" -eq 0 ]
+then
+    echoerr "Outfile \"$OUTFILE\" already exists"
+    exit 1
+fi
+
+# Check if any input file does not exist
+for (( i = 1; i < $#; ++i ))
+do
+    if [ ! -f "${!i}" ]
+    then
+        echoerr "Input file \"${!i}\" does not exist"
+        exit 1
+    fi
+done
+
+# https://stackoverflow.com/questions/7333232/how-to-concatenate-two-mp4-files-using-ffmpeg
+
+# Method concat filter
+if [ "$METHOD" -eq 0 ]
+then
+
+    # Initialize FFmpeg arguments
+    OPT=()
+    FCMPLX=""
+
+    # Assemble filter value
+    for (( i = 1; i < $#; ++i ))
+    do
+        if [ "$i" -gt 1 ]
+        then
+            FCMPLX+=" "
+        fi
+        OPT+=("-i" "${!i}")
+        FCMPLX+="[$(($i-1)):v] [$(($i-1)):a]"
+    done
+
+    # Complete filter value
+    FCMPLX+=" concat=n=$(( $# - 1 )):v=1:a=1 [v] [a]"
+
+    # Invoke FFmpeg and create output file by concat video filter
+    "$FFMPEG" -y ${OPT[@]} -filter_complex "$FCMPLX" -map "[v]" -map "[a]" "$OUTFILE"
+
+# Method concat demuxer
+elif [ "$METHOD" -eq 1 ]
+then
+
+    # Create temporary file for file list in current working directory
+    TMPFILE=$(mktemp --tmpdir=$(pwd) ".$(basename $0).XXXXXXXXXX")
+
+    # Loop over input files
+    for (( i = 1; i < $#; ++i ))
+    do
+        # Add filename to temporary file list
+        echo "file ${!i}" >> "$TMPFILE"
+    done
+
+    # Invoke FFmpeg and create output file by concat demuxer
+    "$FFMPEG" -y -safe 0 -f concat -i "$TMPFILE" -c copy "$OUTFILE"
+
+    # Remove temporary file
+    rm "$TMPFILE"
+
+# Method concat protocol
+elif [ "$METHOD" -eq 2 ]
+then
+
+    # Loop over arguments
+    OPT=""
+    for (( i = 1; i < $#; ++i ))
+    do
+
+        # Append current filename to options string
+        [ "$i" -gt 1 ] && OPT+="|"
+        OPT+="${!i}"
+
+    done
+
+    # Invoke FFmpeg and create output by concat protocol
+    "$FFMPEG" -y -i "concat:$OPT" -c copy "$OUTFILE"
+
+else
+
+    # Issue error message
+    echoerr "Method $METHOD not implemented yet"
+    exit 1
+
+fi

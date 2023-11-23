@@ -1,7 +1,7 @@
 NAME=ffmpeg-tools
 VERSION=0.0.1
 
-BIN:=$(addprefix ffmpeg-, audioshift cattsfile convert cropdetect fadeinout gamma watermark)
+BIN:=$(addprefix ffmpeg-, audioshift convert cropdetect fadeinout gamma merge watermark)
 
 DIRS=etc bin share
 INSTALL_DIRS=`find $(DIRS) -type d 2>/dev/null`
@@ -53,14 +53,23 @@ tag:
 
 release: $(PKG) $(SIG) tag
 
-install:
+checksudo:
+ifneq ($(shell id -u),0)
+	$(error This command requires root privileges)
+endif
+
+install: checksudo
 	for dir in $(INSTALL_DIRS); do mkdir -p $(PREFIX)/$$dir; done
 	for file in $(INSTALL_FILES); do cp $$file $(PREFIX)/$$file; done
 	mkdir -p $(DOC_DIR)
 	cp -r $(DOC_FILES) $(DOC_DIR)/
+	cp -u -t /etc etc/ffmpeg-convert.conf
 
-uninstall:
+uninstall: checksudo
 	for file in $(INSTALL_FILES); do rm -f $(PREFIX)/$$file; done
-	rm -rf $(DOC_DIR)
+	$(RM) -r $(DOC_DIR)
+
+purge: uninstall
+	$(RM) /etc/ffmpeg-convert.conf
 
 .PHONY: build sign man clean test tag release install uninstall all
