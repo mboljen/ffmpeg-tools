@@ -117,7 +117,7 @@ fi
 # Pattern matching for CROPDETECT
 if [[ ! "${CROPDETECT}" =~ ^[0-9]+(((:[0-9]+)?:[0-9]+)?:[0-9]+)?$ ]]
 then
-    echoerr "Invalid cropdetect value '${CROPDETECT}'"
+    echoerr "Invalid cropdetect value '$CROPDETECT'"
     exit 4
 fi
 

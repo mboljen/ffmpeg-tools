@@ -44,9 +44,11 @@ $ ffmpeg-concat [-y] [-m METHOD] INFILE... OUTFILE
 ### Options
 
 - **-m**, **--method**=_value_
+  
   Select concatenation method: `filter` , `demuxer`  or `protocol`
 
 - **-y**, **--yes**
+  
   Overwrite existing files
 
 ## See also

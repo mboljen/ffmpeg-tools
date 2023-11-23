@@ -28,9 +28,15 @@ $ ffmpeg-audioshift [OPTION]... INFILE...
 ### Options
 
 - **-o**, **--offset**=_time_
+  
   Offset audio stream of file `infile` with respect to video by `time` seconds
 
+- **-n**, **--name**=_value_
+  
+  Set default output filename suffix (default: `audioshift`)
+
 - **-y**, **--yes**
+  
   Overwrite existing files
 
 ## See also

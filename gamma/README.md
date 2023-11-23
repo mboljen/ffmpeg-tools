@@ -28,15 +28,19 @@ $ ffmpeg-gamma [OPTION]... INFILE...
 #### Options
 
 - **-g**, **--gamma**=_value_
+  
   Set gamma value (default: `1.0`)
 
 - **-s**, **--saturation**=_value_
+  
   Set saturation level (default: `1.0`)
 
 - **-n**, **--name**=_value_
+  
   Set default output filename suffix (default: `gamma`)
 
 - **-y**, **--yes**
+  
   Overwrite existing files
 
 ## See also

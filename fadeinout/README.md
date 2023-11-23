@@ -28,18 +28,23 @@ $ ffmpeg-fadeinout [OPTION]... INFILE...
 #### Options
 
 - **-t**, **--time**=_value_
+  
   Set fade duration in seconds (default: `5`)
 
 - **-m**, **--mode**=_value_
+  
   Set fade mode: fade-in only (`i`), fade-out only (`o`), both (default: `b`)
 
 - **-s**, **--stream**=_value_
+  
   Fade video stream only (`v`), audio stream only ( `a`), or both (default: `b`)
 
 - **-n**, **--name**=_value_
+  
   Set default output filename suffix (default: `fadeinout`)
 
 - **-y**, **--yes**
+  
   Overwrite existing files
 
 ### See also
