@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Created:         Thu 2023-11-23 11:23:38 CET
-# Last Modified:   Thu 2023-11-23 11:54:58 CET
+# Last Modified:   Thu 2023-11-23 12:18:34 CET
 #
 # ffmpeg-concat:
 #   Concatenate multiple video files.
@@ -39,7 +39,7 @@ fi
 
 # Defaults
 YES=0
-METHOD=2
+METHOD=filter
 
 # Parse command line options
 if ! args=$(getopt -a -o m:hy --long method:,help,yes -- "$@")
@@ -95,7 +95,7 @@ done
 # https://stackoverflow.com/questions/7333232/how-to-concatenate-two-mp4-files-using-ffmpeg
 
 # Method concat filter
-if [ "$METHOD" -eq 0 ]
+if [[ $METHOD =~ "filter" ]]
 then
 
     # Initialize FFmpeg arguments
@@ -120,7 +120,7 @@ then
     "$FFMPEG" -y "${OPTARR[@]}" -filter_complex "$FCMPLX" -map "[v]" -map "[a]" "$OUTFILE"
 
 # Method concat demuxer
-elif [ "$METHOD" -eq 1 ]
+elif [[ $METHOD =~ "demuxer" ]]
 then
 
     # Create temporary file for file list in current working directory
@@ -140,7 +140,7 @@ then
     rm "$TMPFILE"
 
 # Method concat protocol
-elif [ "$METHOD" -eq 2 ]
+elif [[ $METHOD =~ "protocol" ]]
 then
 
     # Loop over arguments

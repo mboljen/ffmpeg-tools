@@ -17,6 +17,22 @@ $ make install
 
 The default `PREFIX` is set to `/usr/local`.  In order to successfully complete the installation, you need to have write permissions for the installation location.
 
+## Description
+
+FFmpeg has three concatenation methods:
+
+1. **concat filter**
+   
+   Use this method if your inputs do not have the same parameters (width, height, etc.) or are not the same formats/codecs, or if you want to perform any filtering. Note that this method performs a re-encode of all inputs.
+
+2. **concat demuxer**
+   
+   Use this method when you want to avoid re-encode and your format does not support file-level concatenation (most files used by general users do not support file-level concatenation).
+
+3. **concat protocol**
+   
+   Use this method with formats that support file-level concatenation (MPEG-1, MPEG-2 PS, DV). Do _not_ use with MP4. This method does not work for many formats, including MP4, due to the nature of these formats and the simplistic physical concatenation performed by this method. It is equivalent of just raw joining the files.
+
 ## Usage
 
 ### Synopsis
@@ -29,14 +45,14 @@ $ ffmpeg-concat [-y] [-m METHOD] INFILE... OUTFILE
 
 **-m**, **--method**=_value_
 
-: Select concatenation method: by filter (`0`), by demuxer (`1`), by protocol (`2`)
+: Select concatenation method: `filter` , `demuxer`  or `protocol`
 
 **-y**, **--yes**
 : Overwrite existing files
 
 ## See also
 
-(...)
+- [Stackoverflow: How to concatenate two MP4 files using ffmpeg](https://stackoverflow.com/questions/7333232)
 
 ## Contributing
 
