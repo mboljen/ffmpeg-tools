@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Created:         Do 2023-03-16 12:35:18 CET
-# Last Modified:   Fri 2023-09-29 00:09:22 CEST
+# Last Modified:   Thu 2023-11-23 11:54:34 CET
 #
 # ffmpeg-gamma:
 #   Enhance gamma and saturation of one or several video files.
@@ -22,6 +22,7 @@ Options:
   -n, --name=VALUE        Set output filename suffix (default: 'gamma')
   -y, --yes               Overwrite existing files
   -h, --help              Show this help message and exit
+
 EOF
 }
 
@@ -32,7 +33,7 @@ echoerr() { cat <<< "$@" 1>&2; }
 FFMPEG=$(command -v ffmpeg)
 
 # Check if ffmpeg is available
-if [ ! -x "${FFMPEG}" ]
+if [ ! -x "$FFMPEG" ]
 then
     echoerr "ffmpeg not found, probably not installed"
     exit 1
@@ -41,11 +42,10 @@ fi
 GAMMA=1.0
 SATURATION=1.0
 YES=0
-NAME='gamma'
+NAME=gamma
 
 # Parse command line options
-args=$(getopt -a -o g:s:n:yh --long gamma:,saturation:,name:,yes,help -- "$@")
-if [[ $? -gt 0 ]]
+if ! args=$(getopt -a -o g:s:n:yh --long gamma:,saturation:,name:,yes,help -- "$@")
 then
     echoerr "Error processing command line options"
     usage
@@ -53,7 +53,7 @@ then
 fi
 
 # Process command line options
-eval set -- ${args}
+eval set -- "${args}"
 while :
 do
     case $1 in
@@ -84,19 +84,19 @@ do
     shift
 
     #
-    if [ ! -f "${INFILE}" ]
+    if [ ! -f "$INFILE" ]
     then
-        echoerr "${INFILE} is not a valid file, skipped"
+        echoerr "$INFILE is not a valid file, skipped"
         continue
     fi
 
-    tmp=$(basename -- "${INFILE}")
-    OUTFILE="${tmp%.*}-${NAME}.${tmp##*.}"
+    tmp=$(basename -- "$INFILE")
+    OUTFILE="${tmp%.*}-$NAME.${tmp##*.}"
 
     #
-    if [ -f "${OUTFILE}" ] && [ ${YES} -ne 1 ]
+    if [ -f "$OUTFILE" ] && [ "$YES" -ne 1 ]
     then
-        echoerr "${OUTFILE} already exists, skipped"
+        echoerr "$OUTFILE already exists, skipped"
         continue
     fi
 
@@ -104,12 +104,12 @@ do
     TMPDIR=$(mktemp --directory --tmpdir)
 
     # Split video in image and modify gamma and saturation on the fly
-    "${FFMPEG}" -i "${INFILE}" -vf fps=10,eq=gamma=${GAMMA}:saturation=${SATURATION} "${TMPDIR}/img-%03d.png"
+    "$FFMPEG" -i "$INFILE" -vf "fps=10,eq=gamma=$GAMMA:saturation=$SATURATION" "$TMPDIR/img-%03d.png"
 
     # Reassemble video
-    "${FFMPEG}" -y -r 60 -f image2 -i "${TMPDIR}/img-%03d.png" -c:v libx264 -crf 25 -pix_fmt yuv420p -an "${OUTFILE}"
+    "$FFMPEG" -y -r 60 -f image2 -i "${TMPDIR}/img-%03d.png" -c:v libx264 -crf 25 -pix_fmt yuv420p -an "$OUTFILE"
 
     # Remove temporary directory
-    rm -rf "${TMPDIR}"
+    rm -rf "$TMPDIR"
 
 done

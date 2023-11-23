@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Created:         So 2023-08-06 01:34:08 CEST
-# Last Modified:   Thu 2023-11-23 11:04:07 CET
+# Last Modified:   Thu 2023-11-23 11:54:17 CET
 #
 # ffmpeg-convert:
 #   Convert one or several video files.
@@ -23,6 +23,7 @@ OPTIONS:
   -n, --name=VALUE             Set output filename suffix (default: 'convert')
   -y, --yes                    Overwrite existing files
   -h, --help                   Show this help message and exit
+
 EOF
 }
 
@@ -76,8 +77,7 @@ done
 OPTSCLR=0
 
 # Parse command line options
-args=$(getopt -a -o c:o:e:yh --long cropdetect:,option:,extension:,yes,help -- "$@")
-if [[ $? -gt 0 ]]
+if ! args=$(getopt -a -o c:o:e:yh --long cropdetect:,option:,extension:,yes,help -- "$@")
 then
     echoerr "Error processing command line options"
     usage
@@ -85,7 +85,7 @@ then
 fi
 
 # Process command line options
-eval set -- ${args}
+eval set -- "$args"
 while :
 do
     case $1 in
@@ -99,7 +99,7 @@ do
                OPTS=()
                OPTSCLR=1
            fi
-           OPTS+=($2)
+           OPTS+=("$2")
            shift 2
            ;;
 
@@ -147,7 +147,7 @@ fi
 
 # For debugging
 echo "CROP    = $CROP"
-echo "OPTS    = ${OPTS[@]}"
+echo "OPTS    = ${OPTS[*]}"
 echo "NAME    = $NAME"
 echo "EXT     = $EXT"
 echo "YES     = $YES"
@@ -182,7 +182,7 @@ do
     # Check if output file already exists
     if [ -f "$OUTFILE" ] && [ "$YES" -eq 0 ]
     then
-        echoerr "Outputfile already exists ... skipped"
+        echoerr "Outfile $OUTFILE already exists, skipped"
         continue
     fi
 
@@ -192,8 +192,7 @@ do
        [ "$CROP" = "enabled" ] || [ "$CROP" = "auto" ]
     then
         # Autocrop
-        cropopt=(-vf $($CROPDETECT "$INFILE"))
-        if [ $? -ne 0 ]
+        if ! cropopt=("-vf $($CROPDETECT "$INFILE")")
         then
             echoerr "cropdetect failed with error code $?"
             cropopt=()
@@ -209,9 +208,9 @@ do
         cropopt=(-vf \""$CROP"\")
     fi
 
-    echo "CROPOPT = ${cropopt[@]}"
+    echo "CROPOPT = ${cropopt[*]}"
 
     # Invoke FFmpeg
-    "$FFMPEG" -y -i "$INFILE" ${cropopt[@]} ${OPTS[@]} "$OUTFILE"
+    "$FFMPEG" -y -i "$INFILE" "${cropopt[@]}" "${OPTS[@]}" "$OUTFILE"
 
 done

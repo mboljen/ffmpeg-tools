@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Created:         Mo 2019-08-26 11:18:48 CEST
-# Last Modified:   Fri 2023-09-29 00:09:03 CEST
+# Last Modified:   Thu 2023-11-23 11:55:12 CET
 #
 # ffmpeg-audioshift:
 #   Delay the audio or video stream of one or several video files.
@@ -22,6 +22,7 @@ Options:
   -n, --name=VALUE   Set output filename suffix (default: 'audioshift')
   -y, --yes          Overwrite existing files
   -h, --help         Show this help message and exit
+
 EOF
 }
 
@@ -32,7 +33,7 @@ echoerr() { cat <<< "$@" 1>&2; }
 FFMPEG=$(command -v ffmpeg)
 
 # Check availability of converter
-if [ ! -x "${FFMPEG}" ]
+if [ ! -x "$FFMPEG" ]
 then
     echoerr "ffmpeg not found, probably not installed"
     exit 1
@@ -41,11 +42,10 @@ fi
 # Defaults
 TIME=0.0
 YES=0
-NAME='audioshift'
+NAME=audioshift
 
 # Parse command line options
-args=$(getopt -a -o a:v:n:hy --long audio:,video:,name:,help,yes -- "$@")
-if [[ $? -gt 0 ]]
+if ! args=$(getopt -a -o a:v:n:hy --long audio:,video:,name:,help,yes -- "$@")
 then
     echoerr "Error processing command line options"
     usage
@@ -53,7 +53,7 @@ then
 fi
 
 # Process command line options
-eval set -- ${args}
+eval set -- "$args"
 while :
 do
     case $1 in
@@ -70,7 +70,7 @@ done
 
 
 # Require offset to be non-zero
-if (( $( echo "${TIME} == 0" | bc -l ) ))
+if (( $( echo "$TIME == 0" | bc -l ) ))
 then
     echo "Offset is zero, nothing to be done"
     exit 0
@@ -88,19 +88,28 @@ fi
 for INFILE in "$@"
 do
     # Check if file exists
-    if [ -f "${INFILE}" ]
+    if [ -f "$INFILE" ]
     then
 
         # Show status
-        echo -e "\n### Processing ${INFILE} ... please wait ...\n"
+        echo -e "\n### Processing $INFILE ... please wait ...\n"
+
+        # Assemble name of output file
+        OUTFILE="${INFILE%.*}-$NAME.${INFILE##*.}"
+
+        if [ -f "$OUTFILE" ] && [ "$YES" -eq 0 ]
+        then
+            echoerr "Outfile $OUTFILE already exists, skipped"
+            continue
+        fi
 
         # Process file
-        "${FFMPEG}" -y -i "${INFILE}" -itsoffset "${TIME}" -i "${INFILE}" "${MAP}" -vcodec copy -acodec copy "${INFILE%.*}-${NAME}.${INFILE##*.}"
+        "$FFMPEG" -y -i "$INFILE" -itsoffset "$TIME" -i "$INFILE" "$MAP" -vcodec copy -acodec copy "$OUTFILE"
 
     else
 
         # Show warning
-        echo -e "\n### Skipping ${INFILE} ... not found\n"
+        echo -e "\n### Skipping $INFILE ... not found\n"
 
     fi
 

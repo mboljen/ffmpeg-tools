@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 #
-# Created:
-# Last Modified:
+# Created:         Thu 2023-11-23 11:23:38 CET
+# Last Modified:   Thu 2023-11-23 11:54:58 CET
 #
 # ffmpeg-concat:
-#    Concatenate multiple video files.
+#   Concatenate multiple video files.
 #
 set -euo pipefail
 
+# Help text
 usage() {
 >&2 cat << EOF
 
@@ -16,9 +17,9 @@ Usage: ffmpeg-concat [OPTION]... INFILE... OUTFILE
 Concatenate multiple video files.
 
 Options:
-  -m, --method=METHOD   Select concatanation method: filter (0), demuxer (1), protocol (2)
-  -y, --yes             Overwrite existing files
-  -h, --help            Show this help message and exit
+  -m, --method=METHOD  Select concatanation method: filter (0), demuxer (1), protocol (2)
+  -y, --yes            Overwrite existing files
+  -h, --help           Show this help message and exit
 
 EOF
 }
@@ -41,8 +42,7 @@ YES=0
 METHOD=2
 
 # Parse command line options
-args=$(getopt -a -o m:hy --long method:,help,yes -- "$@")
-if [[ $? -gt 0 ]]
+if ! args=$(getopt -a -o m:hy --long method:,help,yes -- "$@")
 then
     echoerr "Error processing command line options"
     usage
@@ -50,13 +50,13 @@ then
 fi
 
 # Process command line options
-eval set -- ${args}
+eval set -- "$args"
 while :
 do
     case $1 in
-      -m | --method)  METHOD=$2; shift 2 ;;
-      -y | --yes)     YES=1 ;    shift   ;;
-      -h | --help)    usage ;    shift   ; exit 0 ;;
+      -m | --method)  METHOD=$2 ; shift 2 ;;
+      -y | --yes)     YES=1     ; shift   ;;
+      -h | --help)    usage     ; shift   ; exit 0 ;;
       # -- means the end of the arguments; drop this, and break out of the while loop
       --) shift; break ;;
        *) echoerr "Unsupported option: $1"; usage ; shift; exit 1 ;;
@@ -78,7 +78,7 @@ OUTFILE="${!#}"
 # Check if output file exists
 if [ -f "$OUTFILE" ] && [ "$YES" -eq 0 ]
 then
-    echoerr "Outfile \"$OUTFILE\" already exists"
+    echoerr "$OUTFILE already exists"
     exit 1
 fi
 
@@ -87,7 +87,7 @@ for (( i = 1; i < $#; ++i ))
 do
     if [ ! -f "${!i}" ]
     then
-        echoerr "Input file \"${!i}\" does not exist"
+        echoerr "Input file ${!i} does not exist"
         exit 1
     fi
 done
@@ -99,7 +99,7 @@ if [ "$METHOD" -eq 0 ]
 then
 
     # Initialize FFmpeg arguments
-    OPT=()
+    OPTARR=()
     FCMPLX=""
 
     # Assemble filter value
@@ -109,22 +109,22 @@ then
         then
             FCMPLX+=" "
         fi
-        OPT+=("-i" "${!i}")
-        FCMPLX+="[$(($i-1)):v] [$(($i-1)):a]"
+        OPTARR+=("-i" "${!i}")
+        FCMPLX+="[$((i-1)):v] [$((i-1)):a]"
     done
 
     # Complete filter value
     FCMPLX+=" concat=n=$(( $# - 1 )):v=1:a=1 [v] [a]"
 
     # Invoke FFmpeg and create output file by concat video filter
-    "$FFMPEG" -y ${OPT[@]} -filter_complex "$FCMPLX" -map "[v]" -map "[a]" "$OUTFILE"
+    "$FFMPEG" -y "${OPTARR[@]}" -filter_complex "$FCMPLX" -map "[v]" -map "[a]" "$OUTFILE"
 
 # Method concat demuxer
 elif [ "$METHOD" -eq 1 ]
 then
 
     # Create temporary file for file list in current working directory
-    TMPFILE=$(mktemp --tmpdir=$(pwd) ".$(basename $0).XXXXXXXXXX")
+    TMPFILE=$(mktemp --tmpdir="$(pwd)" ".$(basename "$0").XXXXXXXXXX")
 
     # Loop over input files
     for (( i = 1; i < $#; ++i ))
@@ -144,18 +144,18 @@ elif [ "$METHOD" -eq 2 ]
 then
 
     # Loop over arguments
-    OPT=""
+    OPTSTR=""
     for (( i = 1; i < $#; ++i ))
     do
 
         # Append current filename to options string
-        [ "$i" -gt 1 ] && OPT+="|"
-        OPT+="${!i}"
+        [ "$i" -gt 1 ] && OPTSTR+="|"
+        OPTSTR+="${!i}"
 
     done
 
     # Invoke FFmpeg and create output by concat protocol
-    "$FFMPEG" -y -i "concat:$OPT" -c copy "$OUTFILE"
+    "$FFMPEG" -y -i "concat:$OPTSTR" -c copy "$OUTFILE"
 
 else
 

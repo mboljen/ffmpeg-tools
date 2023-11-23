@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
 #
 # Created:         Thu 2023-03-16 12:35:18 CET
-# Last Modified:   Fri 2023-09-29 00:08:34 CEST
+# Last Modified:   Thu 2023-11-23 11:53:41 CET
 #
 # ffmpeg-watermark:
 #   Add a watermark to a certain position in one or several media files.
 #
 set -euo pipefail
 
+# Help text
 usage() {
 >&2 cat << EOF
 
-Usage: $(basename $0) [OPTION]... WATERMARK INFILE...
+Usage: ffmpeg-watermark [OPTION]... WATERMARK INFILE...
 
 Add an image WATERMARK at a certain position in one or several media files.
 
@@ -26,6 +27,7 @@ Options:
   -h, --help           Show this help message and exit
 
 The following values are accepted by the anchor option:  n|north, s|south, e|east, w|west, ne|northeast, nw|northwest, se|southeast, sw|southwest, c|center, and t|tile.
+
 EOF
 }
 
@@ -37,31 +39,30 @@ FFMPEG=$(command -v ffmpeg)
 FFPROBE=$(command -v ffprobe)
 
 # Check if ffmpeg is available
-if [ ! -x "${FFMPEG}" ]
+if [ ! -x "$FFMPEG" ]
 then
     echoerr "ffmpeg not found, probably not installed"
     exit 1
 fi
 
 # Check if ffprobe is available
-if [ ! -x "${FFPROBE}" ]
+if [ ! -x "$FFPROBE" ]
 then
     echoerr "ffprobe not found, probably not installed"
     exit 1
 fi
 
 # Defaults
-ANCHOR='ne'
+ANCHOR=ne
 SCALOP=
 OPACITY=1
 ANGLE=0
 MARGIN=0
 YES=0
-NAME='watermark'
+NAME=watermark
 
 # Parse command line options
-args=$(getopt -a -o a:m:n:o:r:s:hy --long anchor:,margin:,name:,opacity:,rotate:,scale:,help,yes -- "$@")
-if [[ $? -gt 0 ]]
+if ! args=$(getopt -a -o a:m:n:o:r:s:hy --long anchor:,margin:,name:,opacity:,rotate:,scale:,help,yes -- "$@")
 then
     echoerr "Error processing command line options"
     usage
@@ -69,7 +70,7 @@ then
 fi
 
 # Process command line options
-eval set -- ${args}
+eval set -- "$args"
 while :
 do
     case $1 in
@@ -94,33 +95,33 @@ is_unum() { case $1        in '' | . | *[!0-9.]* | *.*.* ) return 1;; esac ;}
 is_num()  { case ${1#[-+]} in '' | . | *[!0-9.]* | *.*.* ) return 1;; esac ;}
 
 # Check margin be zero or positive integer
-if ! is_uint "${MARGIN}"
+if ! is_uint "$MARGIN"
 then
-    echoerr "Margin must be zero or positive integer, received: ${MARGIN}"
+    echoerr "Margin must be zero or positive integer, received: $MARGIN"
     exit 1
 fi
 
 # Check scaling operator
-if ! [ -z "${SCALOP}"  ] && ! [[ "${SCALOP}" =~ ^[0-9]+:[0-9]+$ ]] && \
-                            ! [[ "${SCALOP}" =~ ^[0-9]+:-1$     ]] && \
-                            ! [[ "${SCALOP}" =~ ^-1:[0-9]+$     ]]
+if [ -n "$SCALOP"  ] && ! [[ "$SCALOP" =~ ^[0-9]+:[0-9]+$ ]] && \
+                        ! [[ "$SCALOP" =~ ^[0-9]+:-1$     ]] && \
+                        ! [[ "$SCALOP" =~ ^-1:[0-9]+$     ]]
 then
-    echoerr "Scaling operator must be WIDTH:HEIGHT, received: ${SCALOP}"
+    echoerr "Scaling operator must be WIDTH:HEIGHT, received: $SCALOP"
     exit 1
 fi
 
 # Check opacity float within range 0 and 1
-if ! is_num "${OPACITY}" || [ $(bc <<< "${OPACITY} < 0") -eq 1 ] || \
-                            [ $(bc <<< "${OPACITY} > 1") -eq 1 ]
+if ! is_num "$OPACITY" || [ "$(bc <<< "$OPACITY < 0")" -eq 1 ] || \
+                          [ "$(bc <<< "$OPACITY > 1")" -eq 1 ]
 then
-    echoerr "Opacity value must be within range 0.0 and 1.0, received: ${OPACITY}"
+    echoerr "Opacity value must be within range 0.0 and 1.0, received: $OPACITY"
     exit 1
 fi
 
 # Check rotate integer
-if ! is_int "${ANGLE}"
+if ! is_int "$ANGLE"
 then
-    echoerr "Angle of rotation must be zero or integer, received: ${ROTATE}"
+    echoerr "Angle of rotation must be zero or integer, received: $ROTATE"
     exit 1
 fi
 
@@ -136,17 +137,16 @@ WMFILE=$1
 shift
 
 # Check if watermark is a valid file
-if [ ! -f "${WMFILE}" ]
+if [ ! -f "$WMFILE" ]
 then
-    echoerr "${WMFILE} is not a valid file"
+    echoerr "$WMFILE is not a valid file"
     exit 1
 fi
 
 # Get dimensions of watermark file
-WMSIZE=$("${FFPROBE}" -v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 "${WMFILE}")
-if [ $? -ne 0 ]
+if ! WMSIZE=$("$FFPROBE" -v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 "$WMFILE")
 then
-    echoerr "Failed to fetch dimensions of ${WMFILE}"
+    echoerr "Failed to fetch dimensions of $WMFILE"
     exit 1
 fi
 
@@ -155,7 +155,7 @@ WMSIZE_W="${WMSIZE%x*}"
 WMSIZE_H="${WMSIZE#*x}"
 
 # Convert degrees to radians
-ANGLE=$(bc -l <<< "${ANGLE}*4.0*a(1.0)/180")
+ANGLE=$(bc -l <<< "$ANGLE*4.0*a(1.0)/180")
 
 # Loop as long as there are input files
 while [ $# -gt 0 ]
@@ -166,17 +166,16 @@ do
     shift
 
     # Check if video is a valid file
-    if [ ! -f "${INFILE}" ]
+    if [ ! -f "$INFILE" ]
     then
-        echoerr "${INFILE} is not a valid file, skipped"
+        echoerr "$INFILE is not a valid file, skipped"
         continue
     fi
 
     # Get dimensions of input file
-    INSIZE=$("${FFPROBE}" -v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 "${INFILE}")
-    if [ $? -ne 0 ]
+    if ! INSIZE=$("$FFPROBE" -v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 "$INFILE")
     then
-        echoerr "Failed to fetch dimensions of ${INFILE}, skipped"
+        echoerr "Failed to fetch dimensions of $INFILE, skipped"
         continue
     fi
 
@@ -185,20 +184,20 @@ do
     INSIZE_H="${INSIZE#*x}"
 
     # Check scaling factor
-    if [ -z "${SCALOP}" ]
+    if [ -z "$SCALOP" ]
     then
 
         # SCALOP is zero
-        if [ $(bc <<< "${WMSIZE_W}+2*${MARGIN} > ${INSIZE_W}") -eq 1 ] || \
-           [ $(bc <<< "${WMSIZE_H}+2*${MARGIN} > ${INSIZE_H}") -eq 1 ]
+        if [ "$(bc <<< "$WMSIZE_W+2*$MARGIN > $INSIZE_W")" -eq 1 ] || \
+           [ "$(bc <<< "$WMSIZE_H+2*$MARGIN > $INSIZE_H")" -eq 1 ]
         then
-            echoerr "Watermark size including margin exceeds size of input file ${INFILE}, skipped"
+            echoerr "Watermark size including margin exceeds size of input file $INFILE, skipped"
             continue
         fi
 
         # Set scaling operator that does not change size
-        SCALOP_W="${WMSIZE_W}"
-        SCALOP_H="${WMSIZE_H}"
+        SCALOP_W="$WMSIZE_W"
+        SCALOP_H="$WMSIZE_H"
 
     else
 
@@ -207,124 +206,124 @@ do
         SCALOP_H="${SCALOP#*:}"
 
         # Identify -1 to enable auto-scaling
-        if   [ "${SCALOP_W}" -eq -1 ] && [ "${SCALOP_H}" -ge  1 ]
+        if   [ "$SCALOP_W" -eq -1 ] && [ "$SCALOP_H" -ge  1 ]
         then
 
             # Auto-determine width of scaled watermark
-            SCALOP_W=$(bc <<< "${SCALOP_H}*${WMSIZE_W}/${WMSIZE_H}")
+            SCALOP_W=$(bc <<< "$SCALOP_H*$WMSIZE_W/$WMSIZE_H")
 
-        elif [ "${SCALOP_W}" -ge  1 ] && [ "${SCALOP_H}" -eq -1 ]
+        elif [ "$SCALOP_W" -ge  1 ] && [ "$SCALOP_H" -eq -1 ]
         then
 
             # Auto-determine height of scaled watermark
-            SCALOP_H=$(bc <<< "${SCALOP_W}*${WMSIZE_H}/${WMSIZE_W}")
+            SCALOP_H=$(bc <<< "$SCALOP_W*$WMSIZE_H/$WMSIZE_W")
 
         fi
 
         # Check width of scaled watermark
-        if [ "${SCALOP_W}" -gt "${INSIZE_W}" ]
+        if [ "$SCALOP_W" -gt "$INSIZE_W" ]
         then
-            echoerr "Watermark width exceeds width of input file ${INFILE}, skipped"
+            echoerr "Watermark width exceeds width of input file $INFILE, skipped"
             continue
         fi
 
         # Check height of scaled watermark
-        if [ "${SCALOP_H}" -gt "${INSIZE_H}" ]
+        if [ "$SCALOP_H" -gt "$INSIZE_H" ]
         then
-            echoerr "Watermark height exceeds height of input file ${INFILE}, skipped"
+            echoerr "Watermark height exceeds height of input file $INFILE, skipped"
             continue
         fi
 
     fi
 
     # Set scaling operator
-    SCALE="${SCALOP_W}:${SCALOP_H}"
+    SCALE="$SCALOP_W:$SCALOP_H"
 
     # Set filename of output file
     tmp=$(basename -- "$INFILE")
-    OUTFILE="${tmp%.*}-${NAME}.${tmp##*.}"
+    OUTFILE="${tmp%.*}-$NAME.${tmp##*.}"
 
     # Do not write output file if it already exists
-    if [ -f "${OUTFILE}" ] && [ $YES -ne 1 ]
+    if [ -f "$OUTFILE" ] && [ $YES -ne 1 ]
     then
-        echoerr "${OUTFILE} already exists, skipped"
+        echoerr "$OUTFILE already exists, skipped"
         continue
     fi
 
     # Place watermark according to anchor descriptor
-    if [[ "${ANCHOR}" =~ ^(c|center)$ ]]
+    if [[ "$ANCHOR" =~ ^(c|center)$ ]]
     then
 
         # Center
-        "${FFMPEG}" -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE},rotate=${ANGLE}:c=none:ow=rotw(${ANGLE}):oh=roth(${ANGLE}),format=rgba,colorchannelmixer=aa=${OPACITY}[wm]; [0][wm]overlay=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/2" "${OUTFILE}"
+        "$FFMPEG" -y -i "$INFILE" -i "$WMFILE" -filter_complex "[1]scale=$SCALE,rotate=$ANGLE:c=none:ow=rotw($ANGLE):oh=roth($ANGLE),format=rgba,colorchannelmixer=aa=${OPACITY}[wm]; [0][wm]overlay=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/2" "$OUTFILE"
 
-    elif [[ "${ANCHOR}" =~ ^(n|north)$ ]]
+    elif [[ "$ANCHOR" =~ ^(n|north)$ ]]
     then
 
         # North
-        "${FFMPEG}" -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE},rotate=${ANGLE}:c=none:ow=rotw(${ANGLE}):oh=roth(${ANGLE}),format=rgba,colorchannelmixer=aa=${OPACITY}[wm]; [0][wm]overlay=x=(main_w-overlay_w)/2:y=${MARGIN}" "${OUTFILE}"
+        "$FFMPEG" -y -i "$INFILE" -i "$WMFILE" -filter_complex "[1]scale=$SCALE,rotate=$ANGLE:c=none:ow=rotw($ANGLE):oh=roth($ANGLE),format=rgba,colorchannelmixer=aa=${OPACITY}[wm]; [0][wm]overlay=x=(main_w-overlay_w)/2:y=$MARGIN" "$OUTFILE"
 
-    elif [[ "${ANCHOR}" =~ ^(s|south)$ ]]
+    elif [[ "$ANCHOR" =~ ^(s|south)$ ]]
     then
 
         # South
-        "${FFMPEG}" -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE},rotate=${ANGLE}:c=none:ow=rotw(${ANGLE}):oh=roth(${ANGLE}),format=rgba,colorchannelmixer=aa=${OPACITY}[wm]; [0][wm]overlay=x=(main_w-overlay_w)/2:y=main_h-overlay_h-${MARGIN}" "${OUTFILE}"
+        "$FFMPEG" -y -i "$INFILE" -i "$WMFILE" -filter_complex "[1]scale=$SCALE,rotate=$ANGLE:c=none:ow=rotw($ANGLE):oh=roth($ANGLE),format=rgba,colorchannelmixer=aa=${OPACITY}[wm]; [0][wm]overlay=x=(main_w-overlay_w)/2:y=main_h-overlay_h-$MARGIN" "$OUTFILE"
 
-    elif [[ "${ANCHOR}" =~ ^(e|east)$ ]]
+    elif [[ "$ANCHOR" =~ ^(e|east)$ ]]
     then
 
         # East
-        "${FFMPEG}" -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE},rotate=${ANGLE}:c=none:ow=rotw(${ANGLE}):oh=roth(${ANGLE}),format=rgba,colorchannelmixer=aa=${OPACITY}[wm]; [0][wm]overlay=x=main_w-overlay_w-${MARGIN}:y=(main_h-overlay_h)/2" "${OUTFILE}"
+        "$FFMPEG" -y -i "$INFILE" -i "$WMFILE" -filter_complex "[1]scale=$SCALE,rotate=$ANGLE:c=none:ow=rotw($ANGLE):oh=roth($ANGLE),format=rgba,colorchannelmixer=aa=${OPACITY}[wm]; [0][wm]overlay=x=main_w-overlay_w-$MARGIN:y=(main_h-overlay_h)/2" "$OUTFILE"
 
-    elif [[ "${ANCHOR}" =~ ^(w|west)$ ]]
+    elif [[ "$ANCHOR" =~ ^(w|west)$ ]]
     then
 
         # West
-        "${FFMPEG}" -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE},rotate=${ANGLE}:c=none:ow=rotw(${ANGLE}):oh=roth(${ANGLE}),format=rgba,colorchannelmixer=aa=${OPACITY}[wm]; [0][wm]overlay=x=${MARGIN}:y=(main_h-overlay_h)/2" "${OUTFILE}"
+        "$FFMPEG" -y -i "$INFILE" -i "$WMFILE" -filter_complex "[1]scale=$SCALE,rotate=$ANGLE:c=none:ow=rotw($ANGLE):oh=roth($ANGLE),format=rgba,colorchannelmixer=aa=${OPACITY}[wm]; [0][wm]overlay=x=$MARGIN:y=(main_h-overlay_h)/2" "$OUTFILE"
 
-    elif [[ "${ANCHOR}" =~ ^(nw|northwest)$ ]]
+    elif [[ "$ANCHOR" =~ ^(nw|northwest)$ ]]
     then
 
         # Northwest
-        "${FFMPEG}" -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE},rotate=${ANGLE}:c=none:ow=rotw(${ANGLE}):oh=roth(${ANGLE}),format=rgba,colorchannelmixer=aa=${OPACITY}[wm]; [0][wm]overlay=x=${MARGIN}:y=${MARGIN}" "${OUTFILE}"
+        "$FFMPEG" -y -i "$INFILE" -i "$WMFILE" -filter_complex "[1]scale=$SCALE,rotate=$ANGLE:c=none:ow=rotw($ANGLE):oh=roth($ANGLE),format=rgba,colorchannelmixer=aa=${OPACITY}[wm]; [0][wm]overlay=x=$MARGIN:y=$MARGIN" "$OUTFILE"
 
-    elif [[ "${ANCHOR}" =~ ^(ne|northeast)$ ]]
+    elif [[ "$ANCHOR" =~ ^(ne|northeast)$ ]]
     then
 
         # Northeast
-        "${FFMPEG}" -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE},rotate=${ANGLE}:c=none:ow=rotw(${ANGLE}):oh=roth(${ANGLE}),format=rgba,colorchannelmixer=aa=${OPACITY}[wm]; [0][wm]overlay=x=main_w-overlay_w-${MARGIN}:y=${MARGIN}" "${OUTFILE}"
+        "$FFMPEG" -y -i "$INFILE" -i "$WMFILE" -filter_complex "[1]scale=$SCALE,rotate=$ANGLE:c=none:ow=rotw($ANGLE):oh=roth($ANGLE),format=rgba,colorchannelmixer=aa=${OPACITY}[wm]; [0][wm]overlay=x=main_w-overlay_w-$MARGIN:y=$MARGIN" "$OUTFILE"
 
-    elif [[ "${ANCHOR}" =~ ^(sw|southwest)$ ]]
+    elif [[ "$ANCHOR" =~ ^(sw|southwest)$ ]]
     then
 
         # Southwest
-        "${FFMPEG}" -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE},rotate=${ANGLE}:c=none:ow=rotw(${ANGLE}):oh=roth(${ANGLE}),format=rgba,colorchannelmixer=aa=${OPACITY}[wm]; [0][wm]overlay=x=${MARGIN}:y=main_h-overlay_h-${MARGIN}" "${OUTFILE}"
+        "$FFMPEG" -y -i "$INFILE" -i "$WMFILE" -filter_complex "[1]scale=$SCALE,rotate=$ANGLE:c=none:ow=rotw($ANGLE):oh=roth($ANGLE),format=rgba,colorchannelmixer=aa=${OPACITY}[wm]; [0][wm]overlay=x=$MARGIN:y=main_h-overlay_h-$MARGIN" "$OUTFILE"
 
-    elif [[ "${ANCHOR}" =~ ^(se|southeast)$ ]]
+    elif [[ "$ANCHOR" =~ ^(se|southeast)$ ]]
     then
 
         # Southeast
-        "${FFMPEG}" -y -i "${INFILE}" -i "${WMFILE}" -filter_complex "[1]scale=${SCALE},rotate=${ANGLE}:c=none:ow=rotw(${ANGLE}):oh=roth(${ANGLE}),format=rgba,colorchannelmixer=aa=${OPACITY}[wm]; [0][wm]overlay=x=main_w-overlay_w-${MARGIN}:y=main_h-overlay_h-${MARGIN}" "${OUTFILE}"
+        "$FFMPEG" -y -i "$INFILE" -i "$WMFILE" -filter_complex "[1]scale=$SCALE,rotate=$ANGLE:c=none:ow=rotw($ANGLE):oh=roth($ANGLE),format=rgba,colorchannelmixer=aa=${OPACITY}[wm]; [0][wm]overlay=x=main_w-overlay_w-$MARGIN:y=main_h-overlay_h-$MARGIN" "$OUTFILE"
 
-    elif [[ "${ANCHOR}" =~ ^(t|tile)$ ]]
+    elif [[ "$ANCHOR" =~ ^(t|tile)$ ]]
     then
 
         # Get width and height of scaled and rotated watermark
-        SCALOP_W_ROT=$(perl -w -e "print int(${SCALOP_W}*abs(cos(${ANGLE}))+
-                                             ${SCALOP_H}*abs(sin(${ANGLE}))+${MARGIN}), qq{\n};")
-        SCALOP_H_ROT=$(perl -w -e "print int(${SCALOP_W}*abs(sin(${ANGLE}))+
-                                             ${SCALOP_H}*abs(cos(${ANGLE}))+${MARGIN}), qq{\n};")
+        SCALOP_W_ROT=$(perl -w -e "print int($SCALOP_W*abs(cos($ANGLE))+
+                                             $SCALOP_H*abs(sin($ANGLE))+$MARGIN), qq{\n};")
+        SCALOP_H_ROT=$(perl -w -e "print int($SCALOP_W*abs(sin($ANGLE))+
+                                             $SCALOP_H*abs(cos($ANGLE))+$MARGIN), qq{\n};")
 
         # Determine tile layout multipliers
-        FAC_X=$((( (${INSIZE_W}+${SCALOP_W_ROT}-1)/${SCALOP_W_ROT} )))
-        FAC_Y=$((( (${INSIZE_H}+${SCALOP_H_ROT}-1)/${SCALOP_H_ROT} )))
+        FAC_X=$(( (INSIZE_W+SCALOP_W_ROT-1)/SCALOP_W_ROT ))
+        FAC_Y=$(( (INSIZE_H+SCALOP_H_ROT-1)/SCALOP_H_ROT ))
 
         # Tile
-        "${FFMPEG}" -y -i "${INFILE}" -loop 1 -i "${WMFILE}" -filter_complex "[1]scale=${SCALE},rotate=${ANGLE}:c=none:ow=rotw(${ANGLE}):oh=roth(${ANGLE}),format=rgba,colorchannelmixer=aa=${OPACITY}[x]; [x]tile=${FAC_X}x${FAC_Y}:padding=${MARGIN}:color=black@0,trim=end_frame=1[wm]; [0][wm]overlay=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/2" "${OUTFILE}"
+        "$FFMPEG" -y -i "$INFILE" -loop 1 -i "$WMFILE" -filter_complex "[1]scale=$SCALE,rotate=$ANGLE:c=none:ow=rotw($ANGLE):oh=roth($ANGLE),format=rgba,colorchannelmixer=aa=${OPACITY}[x]; [x]tile=${FAC_X}x${FAC_Y}:padding=$MARGIN:color=black@0,trim=end_frame=1[wm]; [0][wm]overlay=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/2" "$OUTFILE"
 
     else
 
-        echoerr "Anchor '${ANCHOR}' unknown"
+        echoerr "Anchor '$ANCHOR' unknown"
         exit 2
 
     fi

@@ -25,6 +25,7 @@ Options:
                           SKIP  = inital frames skipped (default: 2)
                           RESET = frames to restart detection process (default: 0)
   -h, --help              Show this help message and exit
+
 EOF
 }
 
@@ -36,14 +37,14 @@ FFMPEG=$(command -v ffmpeg)
 FFPROBE=$(command -v ffprobe)
 
 # Check if ffmpeg is available
-if [ ! -x "${FFMPEG}" ]
+if [ ! -x "$FFMPEG" ]
 then
     echoerr "ffmpeg not found, probably not installed"
     exit 1
 fi
 
 # Check if ffprobe is available
-if [ ! -x "${FFPROBE}" ]
+if [ ! -x "$FFPROBE" ]
 then
     echoerr "ffprobe not found, probably not installed"
     exit 1
@@ -53,8 +54,7 @@ fi
 CROPDETECT='24:16:2:0'
 
 # Parse command line options
-args=$(getopt -a -o s:t:c:h --long skip:,time:,cropfilter:,help -- "$@")
-if [[ $? -gt 0 ]]
+if ! args=$(getopt -a -o s:t:c:h --long skip:,time:,cropfilter:,help -- "$@")
 then
     echoerr "Error processing command line options"
     usage
@@ -62,7 +62,7 @@ then
 fi
 
 # Process command line options
-eval set -- ${args}
+eval set -- "$args"
 while :
 do
     case $1 in
@@ -138,19 +138,19 @@ do
     shift
 
     # Skip file if not existing
-    if [ ! -f "${INFILE}" ]
+    if [ ! -f "$INFILE" ]
     then
-        echoerr "${INFILE} is not a valid file, skipped"
+        echoerr "$INFILE is not a valid file, skipped"
         continue
     fi
 
     # Get duration of first video stream in seconds
-    dur=$("${FFPROBE}" -i "${INFILE}" -show_format -v quiet | sed -n 's/duration=//p')
+    dur=$("$FFPROBE" -i "$INFILE" -show_format -v quiet | sed -n 's/duration=//p')
 
     # Check duration
     if (( $(echo "$dur <= 0" | bc -l) ))
     then
-        echoerr "${INFILE} has non-positive duration $dur ... skipped"
+        echoerr "$INFILE has non-positive duration $dur ... skipped"
         continue
     fi
 
@@ -197,7 +197,7 @@ do
     #echo "T1 = $T1"
 
     # Grep crop geometry
-    result=$("${FFMPEG}" -i "${INFILE}" -ss "$T0" -t "$T1" -vsync vfr -vf "fps=1/2,cropdetect=${CROPDETECT}" -f null - 2>&1 | awk '/crop/ { print $NF }' | tr ' ' '\n' | sort | uniq -c | sort -n | tail -1 | awk '{ print $NF }')
+    result=$("$FFMPEG" -i "$INFILE" -ss "$T0" -t "$T1" -vsync vfr -vf "fps=1/2,cropdetect=$CROPDETECT" -f null - 2>&1 | awk '/crop/ { print $NF }' | tr ' ' '\n' | sort | uniq -c | sort -n | tail -1 | awk '{ print $NF }')
 
     # Check result string
     [ -n "$result" ] && echo "$result" || exit 5
