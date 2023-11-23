@@ -14,11 +14,11 @@ SIG=$(PKG_DIR)/$(PKG_NAME).asc
 
 PREFIX?=/usr/local
 
-all: build $(PKG) $(SIG)
-
 # Forward top targets to sub directories
 $(TOPTARGETS): $(sort $(dir $(wildcard $(BASEDIR)/*/)))
 	$(SILENT)$(foreach path, $^, $(MAKE) -C $(path) $@;)
+
+all: build $(PKG) $(SIG)
 
 release: $(PKG) $(SIG) tag
 
