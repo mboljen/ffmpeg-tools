@@ -17,11 +17,10 @@ Usage: ffmpeg-audioshift [OPTION]... INFILE...
 Delay the audio or video stream of one or several video files.
 
 Options:
-  -a, --audio=VALUE  Delay audio track in seconds (default: 0)
-  -v, --video=VALUE  Delay video track in seconds (default: 0)
-  -n, --name=VALUE   Set output filename suffix (default: 'audioshift')
-  -y, --yes          Overwrite existing files
-  -h, --help         Show this help message and exit
+  -o, --offset=VALUE  Offset audio track in seconds (default: 0).  Positive values delay the audio track.
+  -n, --name=VALUE    Set output filename suffix (default: 'audioshift')
+  -y, --yes           Overwrite existing files
+  -h, --help          Show this help message and exit
 
 EOF
 }
@@ -45,7 +44,7 @@ YES=0
 NAME=audioshift
 
 # Parse command line options
-if ! args=$(getopt -a -o a:v:n:hy --long audio:,video:,name:,help,yes -- "$@")
+if ! args=$(getopt -a -o o:n:hy --long offset:,name:,help,yes -- "$@")
 then
     echoerr "Error processing command line options"
     usage
@@ -57,8 +56,20 @@ eval set -- "$args"
 while :
 do
     case $1 in
-      -a | --audio)  TIME=$2 ; shift 2 ; MAP="-map 0:v -map 1:a" ;;
-      -v | --video)  TIME=$2 ; shift 2 ; MAP="-map 1:v -map 0:a" ;;
+      -o | --offset)
+      
+           TIME=$2
+           shift 2
+           if [ "$(bc <<< "$TIME > 0")" -eq 1 ]
+           then
+               # Offset is positive, i.e. delay audio wrt video
+               MAP="-map 0:v -map 1:a"
+           else
+               # Offset is negative, i.e. delay video wrt audio
+               MAP="-map 1:v -map 0:a"
+           fi
+           ;;
+           
       -n | --name)   NAME=$2 ; shift 2 ;;
       -y | --yes)    YES=1   ; shift   ;;
       -h | --help)   usage   ; shift   ; exit 0 ;;

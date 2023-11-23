@@ -27,19 +27,20 @@ $ ffmpeg-convert [OPTION]... INFILE...
 
 ### Options
 
-**-c**, **--cropdetect**=_value_
-: Set cropdetect to remove black borders (default: `auto`)
+- **-c**, **--cropdetect**=_value_
+  Set cropdetect to remove black borders (default: `auto`)
 
-**-o**, **--option**=_value_
-: Set `ffmpeg` option and value (can be used multiple times)
+- **-o**, **--option**=_value_
+  Set `ffmpeg` option and value (can be used multiple times)
 
-**-e**, **--extension**=_value_
-: Set file extension of output file (default: `mp4`)
+- **-e**, **--extension**=_value_
+  Set file extension of output file (default: `mp4`)
 
-**-n**, **--name**=_value_
+- **-n**, **--name**=_value_
+  Set the name of the suffix (default: `convert`)
 
-**-y**, **--yes**
-: Overwrite existing files
+- **-y**, **--yes**
+  Overwrite existing files
 
 ### Default settings
 

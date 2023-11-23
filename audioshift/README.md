@@ -1,6 +1,6 @@
 # ffmpeg-audioshift
 
-Delay the audio or the video track of one or several video files.
+Offset the audio track of one or several video files.
 
 A recent version of `ffmpeg` is required.
 
@@ -27,14 +27,11 @@ $ ffmpeg-audioshift [OPTION]... INFILE...
 
 ### Options
 
-**-a**, **--audio**=_time_
-: Delay audio stream of file `infile` with respect to video by `time` seconds
+- **-o**, **--offset**=_time_
+  Offset audio stream of file `infile` with respect to video by `time` seconds
 
-**-v**, **--video**=_time_
-: Delay video stream of file `infile` with respect to audio by `time` seconds
-
-**-y**, **--yes**
-: Overwrite existing files
+- **-y**, **--yes**
+  Overwrite existing files
 
 ## See also
 

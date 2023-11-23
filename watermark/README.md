@@ -27,26 +27,26 @@ $ ffmpeg-watermark [OPTION]... WATERMARK INFILE...
 
 #### Options
 
-**-a**, **--anchor**=_value_
-: Set anchor of watermark (default: `ne`)
+- **-a**, **--anchor**=_value_
+  Set anchor of watermark (default: `ne`)
 
-**-s**, **--scale**=_width_:_height_
-: Scale watermark according to larger dimension of media file (default: undefined)
+- **-s**, **--scale**=_width_:_height_
+  Scale watermark according to larger dimension of media file (default: undefined)
 
-**-m**, **--margin**=_value_
-: Set margin around watermark in pixels (default: `0`)
+- **-m**, **--margin**=_value_
+  Set margin around watermark in pixels (default: `0`)
 
-**-o**, **--opacity**=_value_
-: Set opacity of watermark (default: `1`)
+- **-o**, **--opacity**=_value_
+  Set opacity of watermark (default: `1`)
 
-**-r**, **--rotate**=_value_
-: Set clockwise rotation angle of watermark in degrees (default: `0`)
+- **-r**, **--rotate**=_value_
+  Set clockwise rotation angle of watermark in degrees (default: `0`)
 
-**-n**, **--name**=_value_
-: Set default output filename suffix (default: `watermark`)
+- **-n**, **--name**=_value_
+  Set default output filename suffix (default: `watermark`)
 
-**-y**, **--yes**
-: Overwrite existing files
+- **-y**, **--yes**
+  Overwrite existing files
 
 ## See also
 
