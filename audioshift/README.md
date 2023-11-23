@@ -1,16 +1,10 @@
-# ffmpeg-tools
+# ffmpeg-audioshift
 
-This collections provides the following wrappers for `ffmpeg`.
-
-+ [ffmpeg-audioshift](audioshift/README.md)
-+ [ffmpeg-concat](concat/README.md)
-+ [ffmpeg-convert](convert/README.md)
-+ [ffmpeg-cropdetect](cropdetect/README.md)
-+ [ffmpeg-fadeinout](fadeinout/README.md)
-+ [ffmpeg-gamma](gamma/README.md)
-+ [ffmpeg-watermark](watermark/README.md)
+Delay the audio or the video track of one or several video files.
 
 A recent version of `ffmpeg` is required.
+
+This utlity is part of the bundle `ffmpeg-tools` documented [here](../README.md).
 
 ## Installation
 
@@ -25,7 +19,22 @@ The default `PREFIX` is set to `/usr/local`.  In order to successfully complete 
 
 ## Usage
 
-(...)
+### Synopsis
+
+```console
+$ ffmpeg-audioshift [OPTION]... INFILE...
+```
+
+### Options
+
+**-a**, **--audio**=_time_
+: Delay audio stream of file `infile` with respect to video by `time` seconds
+
+**-v**, **--video**=_time_
+: Delay video stream of file `infile` with respect to audio by `time` seconds
+
+**-y**, **--yes**
+: Overwrite existing files
 
 ## See also
 

@@ -1,16 +1,10 @@
-# ffmpeg-tools
+# ffmpeg-concat
 
-This collections provides the following wrappers for `ffmpeg`.
-
-+ [ffmpeg-audioshift](audioshift/README.md)
-+ [ffmpeg-concat](concat/README.md)
-+ [ffmpeg-convert](convert/README.md)
-+ [ffmpeg-cropdetect](cropdetect/README.md)
-+ [ffmpeg-fadeinout](fadeinout/README.md)
-+ [ffmpeg-gamma](gamma/README.md)
-+ [ffmpeg-watermark](watermark/README.md)
+Concatenate multiple video files.
 
 A recent version of `ffmpeg` is required.
+
+This utlity is part of the bundle `ffmpeg-tools` documented [here](../README.md).
 
 ## Installation
 
@@ -25,7 +19,20 @@ The default `PREFIX` is set to `/usr/local`.  In order to successfully complete 
 
 ## Usage
 
-(...)
+### Synopsis
+
+```console
+$ ffmpeg-concat [-y] [-m METHOD] INFILE... OUTFILE
+```
+
+### Options
+
+**-m**, **--method**=_value_
+
+: Select concatenation method: by filter (`0`), by demuxer (`1`), by protocol (`2`)
+
+**-y**, **--yes**
+: Overwrite existing files
 
 ## See also
 

@@ -1,2 +1,9 @@
 pkg/
-share/
+
+audioshift/share/
+concat/share/
+convert/share/
+cropdetect/share/
+fadeinout/share/
+gamma/share/
+watermark/share/
