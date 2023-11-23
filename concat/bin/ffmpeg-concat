@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Created:         Thu 2023-11-23 11:23:38 CET
-# Last Modified:   Thu 2023-11-23 12:18:34 CET
+# Last Modified:   Thu 2023-11-23 12:24:02 CET
 #
 # ffmpeg-concat:
 #   Concatenate multiple video files.
@@ -17,7 +17,7 @@ Usage: ffmpeg-concat [OPTION]... INFILE... OUTFILE
 Concatenate multiple video files.
 
 Options:
-  -m, --method=METHOD  Select concatanation method: filter (0), demuxer (1), protocol (2)
+  -m, --method=METHOD  Select concatanation method: filter (default), demuxer, protocol
   -y, --yes            Overwrite existing files
   -h, --help           Show this help message and exit
 
