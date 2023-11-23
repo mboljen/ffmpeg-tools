@@ -3,7 +3,7 @@ VERSION=0.0.1
 
 BIN:=$(addprefix ffmpeg-, audioshift convert cropdetect fadeinout gamma merge watermark)
 
-DIRS=etc bin share
+DIRS=bin share
 INSTALL_DIRS=`find $(DIRS) -type d 2>/dev/null`
 INSTALL_FILES=`find $(DIRS) -type f 2>/dev/null`
 DOC_FILES=$(wildcard *.md *.txt)
