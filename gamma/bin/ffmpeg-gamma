@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Created:         Do 2023-03-16 12:35:18 CET
-# Last Modified:   Thu 2023-11-23 11:54:34 CET
+# Last Modified:   So 2024-06-16 18:04:38 CEST
 #
 # ffmpeg-gamma:
 #   Enhance gamma and saturation of one or several video files.
@@ -19,7 +19,8 @@ Enhance gamma and saturation of one or several video files.
 Options:
   -g, --gamma=VALUE       Set gamma value (default: 1.0)
   -s, --saturation=VALUE  Set saturation level (default: 1.0)
-  -n, --name=VALUE        Set output filename suffix (default: 'gamma')
+  -n, --name=VALUE        Set output filename suffix (default: 'none')
+  -d, --directory=VALUE   Set output directory (default: 'gamma')
   -y, --yes               Overwrite existing files
   -h, --help              Show this help message and exit
 
@@ -41,11 +42,12 @@ fi
 
 GAMMA=1.0
 SATURATION=1.0
+DIR=
+NAME=
 YES=0
-NAME=gamma
 
 # Parse command line options
-if ! args=$(getopt -a -o g:s:n:yh --long gamma:,saturation:,name:,yes,help -- "$@")
+if ! args=$(getopt -a -o g:s:n:d:yh --long gamma:,saturation:,name:,directory:,yes,help -- "$@")
 then
     echoerr "Error processing command line options"
     usage
@@ -60,6 +62,7 @@ do
       -g | --gamma)       GAMMA=$2      ; shift 2 ;;
       -s | --saturation)  SATURATION=$2 ; shift 2 ;;
       -n | --name)        NAME=$2       ; shift 2 ;;
+      -d | --directory)   DIR=$2        ; shift 2 ;;
       -y | --yes)         YES=1         ; shift   ;;
       -h | --help)        usage         ; shift   ; exit 0 ;;
       # -- means the end of the arguments; drop this, and break out of the while loop
@@ -74,6 +77,24 @@ then
     echoerr "Expecting at least 1 argument"
     usage
     exit 1
+fi
+
+# Check if NAME and DIR are both empty
+if [ -z "$NAME" ] && [ -z "$DIR" ]
+then
+    echoerr "Specify either filename suffix or output directory"
+    usage
+    exit 1
+fi
+
+# Set output directory if not defined
+if [ -z "$DIR" ]
+then
+    # Set current as output directory
+    DIR=$(pwd)
+else
+    # Create output directory if not existing
+    mkdir -p "$DIR"
 fi
 
 #
@@ -91,7 +112,12 @@ do
     fi
 
     tmp=$(basename -- "$INFILE")
-    OUTFILE="${tmp%.*}-$NAME.${tmp##*.}"
+    if [ -z "$NAME" ]
+    then
+        OUTFILE="$DIR/${tmp%.*}.${tmp##*.}"
+    else
+        OUTFILE="$DIR/${tmp%.*}-$NAME.${tmp##*.}"
+    fi
 
     #
     if [ -f "$OUTFILE" ] && [ "$YES" -ne 1 ]

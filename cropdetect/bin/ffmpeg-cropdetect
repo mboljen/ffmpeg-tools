@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Created:         Mo 2020-05-11 01:00:51 CEST
-# Last Modified:   Do 2024-01-04 10:26:51 CET
+# Last Modified:   So 2024-06-16 16:53:48 CEST
 #
 # ffmpeg-cropdetect:
 #   Detect black margins of one or several video files.

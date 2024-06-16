@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Created:         Mo 2019-08-26 11:18:48 CEST
-# Last Modified:   Thu 2023-11-23 11:55:12 CET
+# Last Modified:   So 2024-06-16 18:04:41 CEST
 #
 # ffmpeg-audioshift:
 #   Delay the audio or video stream of one or several video files.
@@ -17,10 +17,11 @@ Usage: ffmpeg-audioshift [OPTION]... INFILE...
 Delay the audio or video stream of one or several video files.
 
 Options:
-  -o, --offset=VALUE  Offset audio track in seconds (default: 0).  Positive values delay the audio track.
-  -n, --name=VALUE    Set output filename suffix (default: 'audioshift')
-  -y, --yes           Overwrite existing files
-  -h, --help          Show this help message and exit
+  -o, --offset=VALUE     Offset audio track in seconds (default: 0).  Positive values delay the audio track.
+  -n, --name=VALUE       Set output filename suffix (default: 'none')
+  -d, --directory=VALUE  Set output directory (default: 'pwd')
+  -y, --yes              Overwrite existing files
+  -h, --help             Show this help message and exit
 
 EOF
 }
@@ -40,11 +41,12 @@ fi
 
 # Defaults
 TIME=0.0
+DIR=
+NAME=
 YES=0
-NAME=audioshift
 
 # Parse command line options
-if ! args=$(getopt -a -o o:n:hy --long offset:,name:,help,yes -- "$@")
+if ! args=$(getopt -a -o o:n:d:hy --long offset:,name:,directory:,help,yes -- "$@")
 then
     echoerr "Error processing command line options"
     usage
@@ -57,7 +59,7 @@ while :
 do
     case $1 in
       -o | --offset)
-      
+
            TIME=$2
            shift 2
            if [ "$(bc <<< "$TIME > 0")" -eq 1 ]
@@ -69,8 +71,9 @@ do
                MAP="-map 1:v -map 0:a"
            fi
            ;;
-           
+
       -n | --name)   NAME=$2 ; shift 2 ;;
+      -d | --directory)  DIR=$2; shift 2 ;;
       -y | --yes)    YES=1   ; shift   ;;
       -h | --help)   usage   ; shift   ; exit 0 ;;
       # -- means the end of the arguments; drop this, and break out of the while loop
@@ -95,6 +98,24 @@ then
     exit 1
 fi
 
+# Check if NAME and DIR are both empty
+if [ -z "$NAME" ] && [ -z "$DIR" ]
+then
+    echoerr "Specify either filename suffix or output directory"
+    usage
+    exit 1
+fi
+
+# Set output directory if not defined
+if [ -z "$DIR" ]
+then
+    # Set current as output directory
+    DIR=$(pwd)
+else
+    # Create output directory if not existing
+    mkdir -p "$DIR"
+fi
+
 # Convert input files
 for INFILE in "$@"
 do
@@ -106,7 +127,12 @@ do
         echo -e "\n### Processing $INFILE ... please wait ...\n"
 
         # Assemble name of output file
-        OUTFILE="${INFILE%.*}-$NAME.${INFILE##*.}"
+        if [ -z "$NAME" ]
+        then
+            OUTFILE="$DIR/$INFILE"
+        else
+            OUTFILE="$DIR/${INFILE%.*}-$NAME.${INFILE##*.}"
+        fi
 
         if [ -f "$OUTFILE" ] && [ "$YES" -eq 0 ]
         then

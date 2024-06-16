@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Created:         So 2020-06-28 10:29:34 CEST
-# Last Modified:   Thu 2023-11-23 11:40:08 CET
+# Last Modified:   So 2024-06-16 18:04:37 CEST
 #
 # ffmpeg-fadeinout:
 #    Add a fade-in and fade-out effect to one or several video files.
@@ -17,12 +17,13 @@ Usage: ffmpeg-fadeinout [OPTION]... INFILE...
 Add a fade-in and fade-out effect to one or several video files.
 
 Options:
-  -t, --time=VALUE    Fade duration in seconds (default: 5)
-  -m, --mode=VALUE    Fade-in only (i), fade-out only (o), both (default: 'b')
-  -s, --stream=VALUE  Video stream only (v), audio stream only (a), both (default:b)
-  -n, --name=VALUE    Set output filename suffix (default: 'fadeinout')
-  -y, --yes           Overwrite existing files
-  -h, --help          Show this help message and exit
+  -t, --time=VALUE       Fade duration in seconds (default: 5)
+  -m, --mode=VALUE       Fade-in only (i), fade-out only (o), both (default: 'b')
+  -s, --stream=VALUE     Video stream only (v), audio stream only (a), both (default:b)
+  -n, --name=VALUE       Set output filename suffix (default: 'none')
+  -d, --directory=VALUE  Set output directory (default: 'fadeinout')
+  -y, --yes              Overwrite existing files
+  -h, --help             Show this help message and exit
 
 EOF
 }
@@ -53,11 +54,12 @@ fi
 FADEDUR=5
 MODE='b'
 STREAM='b'
+DIR=
+NAME=
 YES=0
-NAME=fadeinout
 
 # Parse command line options
-if ! args=$(getopt -a -o t:m:s:n:yh --long time:,mode:,stream:,name:,yes,help -- "$@")
+if ! args=$(getopt -a -o t:m:s:n:d:yh --long time:,mode:,stream:,name:,directory:,yes,help -- "$@")
 then
     echoerr "Error processing command line options"
     usage
@@ -69,18 +71,18 @@ eval set -- "${args}"
 while :
 do
     case $1 in
-      -t | --time)   FADEDUR=$2 ; shift 2 ;;
-      -m | --mode)   MODE=$2    ; shift 2 ;;
-      -s | --stream) STREAM=$2  ; shift 2 ;;
-      -n | --name)   NAME=$2    ; shift 2 ;;
-      -y | --yes)    YES=1      ; shift   ;;
-      -h | --help)   usage      ; shift   ; exit 0 ;;
+      -t | --time)       FADEDUR=$2 ; shift 2 ;;
+      -m | --mode)       MODE=$2    ; shift 2 ;;
+      -s | --stream)     STREAM=$2  ; shift 2 ;;
+      -n | --name)       NAME=$2    ; shift 2 ;;
+      -d | --directory)  DIR=$2     ; shift 2 ;;
+      -y | --yes)        YES=1      ; shift   ;;
+      -h | --help)       usage      ; shift   ; exit 0 ;;
       # -- means the end of the arguments; drop this, and break out of the while loop
       --) shift; break ;;
        *) echoerr "Unsupported option: $1"; usage ; shift; exit 1 ;;
     esac
 done
-
 
 # Check FADEDUR being a positive floating point number
 result=$(echo "scale=2;$FADEDUR" | bc -q 2>/dev/null)
@@ -125,6 +127,24 @@ then
     exit 1
 fi
 
+# Check if NAME and DIR are both empty
+if [ -z "$NAME" ] && [ -z "$DIR" ]
+then
+    echoerr "Specify either filename suffix or output directory"
+    usage
+    exit 1
+fi
+
+# Set output directory if not defined
+if [ -z "$DIR" ]
+then
+    # Set current as output directory
+    DIR=$(pwd)
+else
+    # Create output directory if not existing
+    mkdir -p "$DIR"
+fi
+
 # Loop over input files
 for f in "$@"
 do
@@ -149,7 +169,12 @@ do
     # Assemble output filename
     FNAME=$(rev <<< "$f" | cut -d. -f2- | rev)
     FEXT=$(rev <<< "$f" | cut -d. -f1 | rev)
-    FNEW="$FNAME-$NAME.$FEXT"
+    if [ -z "$NAME" ]
+    then
+        FNEW="$DIR/$FNAME.$FEXT"
+    else
+        FNEW="$DIR/$FNAME-$NAME.$FEXT"
+    fi
 
     # Skip ffmpeg if output file exists
     if [ -f "$FNEW" ] && [ $YES -eq 0 ]

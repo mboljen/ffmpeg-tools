@@ -6,16 +6,9 @@ A recent version of `ffmpeg` is required.
 
 This utlity is part of the bundle `ffmpeg-tools` documented [here](../README.md).
 
-## Installation
+## Description
 
-Use the following command to install this software:
-
-```bash
-$ make
-$ make install
-```
-
-The default `PREFIX` is set to `/usr/local`.  In order to successfully complete the installation, you need to have write permissions for the installation location.
+(...)
 
 ## Usage
 
@@ -28,23 +21,27 @@ $ ffmpeg-convert [OPTION]... INFILE...
 ### Options
 
 - **-c**, **--cropdetect**=_value_
-  
+
   Set cropdetect to remove black borders (default: `auto`)
 
 - **-o**, **--option**=_value_
-  
+
   Set `ffmpeg` option and value (can be used multiple times)
 
 - **-e**, **--extension**=_value_
-  
+
   Set file extension of output file (default: `mp4`)
 
 - **-n**, **--name**=_value_
-  
-  Set default output filename suffix (default: `convert`)
-  
+
+  Set default output filename suffix (default: `none`)
+
+- **-d**, **--directory**=_value_
+
+  Set an optional directory to where to write the files (default: `none`)
+
 - **-y**, **--yes**
-  
+
   Overwrite existing files
 
 ### Default settings

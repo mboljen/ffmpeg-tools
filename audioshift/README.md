@@ -6,16 +6,9 @@ A recent version of `ffmpeg` is required.
 
 This utlity is part of the bundle `ffmpeg-tools` documented [here](../README.md).
 
-## Installation
+## Description
 
-Use the following command to install this software:
-
-```bash
-$ make
-$ make install
-```
-
-The default `PREFIX` is set to `/usr/local`.  In order to successfully complete the installation, you need to have write permissions for the installation location.
+(...)
 
 ## Usage
 
@@ -28,15 +21,19 @@ $ ffmpeg-audioshift [OPTION]... INFILE...
 ### Options
 
 - **-o**, **--offset**=_time_
-  
+
   Offset audio stream of file `infile` with respect to video by `time` seconds
 
 - **-n**, **--name**=_value_
-  
-  Set default output filename suffix (default: `audioshift`)
+
+  Set default output filename suffix (default: `none`)
+
+- **-d**, **--directory**=_value_
+
+  Set an optional directory to where to write the files (default: `none`)
 
 - **-y**, **--yes**
-  
+
   Overwrite existing files
 
 ## See also

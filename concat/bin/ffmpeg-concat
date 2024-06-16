@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Created:         Thu 2023-11-23 11:23:38 CET
-# Last Modified:   Thu 2023-11-23 12:24:02 CET
+# Last Modified:   So 2024-06-16 17:03:33 CEST
 #
 # ffmpeg-concat:
 #   Concatenate multiple video files.
@@ -17,9 +17,9 @@ Usage: ffmpeg-concat [OPTION]... INFILE... OUTFILE
 Concatenate multiple video files.
 
 Options:
-  -m, --method=METHOD  Select concatanation method: filter (default), demuxer, protocol
-  -y, --yes            Overwrite existing files
-  -h, --help           Show this help message and exit
+  -m, --method=METHOD    Select concatanation method: filter (default), demuxer, protocol
+  -y, --yes              Overwrite existing files
+  -h, --help             Show this help message and exit
 
 EOF
 }
@@ -54,9 +54,9 @@ eval set -- "$args"
 while :
 do
     case $1 in
-      -m | --method)  METHOD=$2 ; shift 2 ;;
-      -y | --yes)     YES=1     ; shift   ;;
-      -h | --help)    usage     ; shift   ; exit 0 ;;
+      -m | --method)     METHOD=$2 ; shift 2 ;;
+      -y | --yes)        YES=1     ; shift   ;;
+      -h | --help)       usage     ; shift   ; exit 0 ;;
       # -- means the end of the arguments; drop this, and break out of the while loop
       --) shift; break ;;
        *) echoerr "Unsupported option: $1"; usage ; shift; exit 1 ;;

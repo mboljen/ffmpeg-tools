@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Created:         Thu 2023-03-16 12:35:18 CET
-# Last Modified:   Thu 2023-11-23 11:53:41 CET
+# Last Modified:   So 2024-06-16 18:04:43 CEST
 #
 # ffmpeg-watermark:
 #   Add a watermark to a certain position in one or several media files.
@@ -17,14 +17,15 @@ Usage: ffmpeg-watermark [OPTION]... WATERMARK INFILE...
 Add an image WATERMARK at a certain position in one or several media files.
 
 Options:
-  -a, --anchor=VALUE   Set anchor of watermark (default: 'ne')
-  -s, --scale=VALUE    Scale watermark to WIDTH:HEIGHT in pixels (default: undefined)
-  -m, --margin=VALUE   Set margin around watermark in pixels (default: 0)
-  -o. --opacity=VALUE  Set opacity of watermark (default: 1)
-  -r, --rotate=VALUE   Set clockwise rotation angle of watermark in degrees (default: 0)
-  -n, --name=VALUE     Set output filename suffix (default: 'watermark')
-  -y, --yes            Overwrite existing files
-  -h, --help           Show this help message and exit
+  -a, --anchor=VALUE      Set anchor of watermark (default: 'ne')
+  -s, --scale=VALUE       Scale watermark to WIDTH:HEIGHT in pixels (default: undefined)
+  -m, --margin=VALUE      Set margin around watermark in pixels (default: 0)
+  -o. --opacity=VALUE     Set opacity of watermark (default: 1)
+  -r, --rotate=VALUE      Set clockwise rotation angle of watermark in degrees (default: 0)
+  -n, --name=VALUE        Set output filename suffix (default: 'none')
+  -d, --directory=VALUE   Set output directory (default: 'watermark')
+  -y, --yes               Overwrite existing files
+  -h, --help              Show this help message and exit
 
 The following values are accepted by the anchor option:  n|north, s|south, e|east, w|west, ne|northeast, nw|northwest, se|southeast, sw|southwest, c|center, and t|tile.
 
@@ -59,10 +60,11 @@ OPACITY=1
 ANGLE=0
 MARGIN=0
 YES=0
-NAME=watermark
+NAME=
+DIR=
 
 # Parse command line options
-if ! args=$(getopt -a -o a:m:n:o:r:s:hy --long anchor:,margin:,name:,opacity:,rotate:,scale:,help,yes -- "$@")
+if ! args=$(getopt -a -o a:m:n:o:r:s:d:hy --long anchor:,margin:,name:,opacity:,rotate:,scale:,directory:,help,yes -- "$@")
 then
     echoerr "Error processing command line options"
     usage
@@ -74,14 +76,15 @@ eval set -- "$args"
 while :
 do
     case $1 in
-      -a | --anchor)   ANCHOR=$2  ; shift 2 ;;
-      -m | --margin)   MARGIN=$2  ; shift 2 ;;
-      -n | --name)     NAME=$2    ; shift 2 ;;
-      -o | --opacity)  OPACITY=$2 ; shift 2 ;;
-      -r | --rotate)   ANGLE=$2   ; shift 2 ;;
-      -s | --scale)    SCALOP=$2  ; shift 2 ;;
-      -y | --yes)      YES=1      ; shift   ;;
-      -h | --help)     usage      ; shift   ; exit 0 ;;
+      -a | --anchor)     ANCHOR=$2  ; shift 2 ;;
+      -m | --margin)     MARGIN=$2  ; shift 2 ;;
+      -n | --name)       NAME=$2    ; shift 2 ;;
+      -o | --opacity)    OPACITY=$2 ; shift 2 ;;
+      -r | --rotate)     ANGLE=$2   ; shift 2 ;;
+      -s | --scale)      SCALOP=$2  ; shift 2 ;;
+      -d | --directory)  DIR=$2     ; shift 2 ;;
+      -y | --yes)        YES=1      ; shift   ;;
+      -h | --help)       usage      ; shift   ; exit 0 ;;
       # -- means the end of the arguments; drop this, and break out of the while loop
       --) shift; break ;;
        *) echoerr "Unsupported option: $1"; usage ; shift; exit 1 ;;
@@ -130,6 +133,24 @@ if [ $# -lt 2 ]
 then
     echoerr "Expecting at least 2 arguments"
     exit 1
+fi
+
+# Check if NAME and DIR are both empty
+if [ -z "$NAME" ] && [ -z "$DIR" ]
+then
+    echoerr "Specify either filename suffix or output directory"
+    usage
+    exit 1
+fi
+
+# Set output directory if not defined
+if [ -z "$DIR" ]
+then
+    # Set current as output directory
+    DIR=$(pwd)
+else
+    # Create output directory if not existing
+    mkdir -p "$DIR"
 fi
 
 # Get watermark file
@@ -241,7 +262,12 @@ do
 
     # Set filename of output file
     tmp=$(basename -- "$INFILE")
-    OUTFILE="${tmp%.*}-$NAME.${tmp##*.}"
+    if [ -z "$NAME" ]
+    then
+        OUTFILE="$DIR/${tmp%.*}.${tmp##*.}"
+    else
+        OUTFILE="$DIR/${tmp%.*}-$NAME.${tmp##*.}"
+    fi
 
     # Do not write output file if it already exists
     if [ -f "$OUTFILE" ] && [ $YES -ne 1 ]
