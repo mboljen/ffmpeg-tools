@@ -1,6 +1,5 @@
 # ffmpeg-tools
 
-
 This collections provides the following wrappers for **FFmpeg**:
 
 + [ffmpeg-audioshift](share/doc/ffmpeg-audioshift.md)
@@ -16,7 +15,6 @@ A recent version of **FFmpeg** is required.
 
 ## Installation
 
-
 Use the following command to install this software:
 
 ```console
@@ -27,21 +25,18 @@ $ make install
 The default `PREFIX` is set to `/usr/local`.  In order to successfully complete the installation, you need to have write permissions for the installation location.
 
 
-## See also
-
-
-- [ffmpeg](https://ffmpeg.org/) - A complete, cross-platform solution to record, convert and stream audio and video
-
-
 ## Contributing
-
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
 Please make sure to update tests as appropriate.
 
 
-## License
+## See also
 
++ [ffmpeg](https://ffmpeg.org/) - A complete, cross-platform solution to record, convert and stream audio and video
+
+
+## License
 
 [MIT](https://choosealicense.com/licenses/mit/)

@@ -4,45 +4,47 @@ A recent version of **FFmpeg** is required.
 
 This utlity is part of the bundle `ffmpeg-tools` documented [here](../../README.md).
 
+
 ## Description
 
 Converts one or several video files.
 
-## Usage
 
-### Synopsis
+## Synopsis
 
 ```console
 $ ffmpeg-convert [OPTION]... INFILE...
 ```
 
-### Options
 
-- **-c**, **--cropdetect**=_value_
+## Options
+
++ **-c**, **--cropdetect**=_value_
 
   Set cropdetect to remove black borders (default: `auto`)
 
-- **-o**, **--option**=_value_
++ **-o**, **--option**=_value_
 
   Set **FFmpeg** option and value (can be used multiple times)
 
-- **-e**, **--extension**=_value_
++ **-e**, **--extension**=_value_
 
   Set file extension of output file (default: `mp4`)
 
-- **-n**, **--name**=_value_
++ **-n**, **--name**=_value_
 
   Set default output filename suffix (default: `none`)
 
-- **-d**, **--directory**=_value_
++ **-d**, **--directory**=_value_
 
   Set an optional directory to where to write the files (default: `none`)
 
-- **-y**, **--yes**
++ **-y**, **--yes**
 
   Overwrite existing files
 
-### Default settings
+
+## Default settings
 
 The wrapper parses local and user-defined configuration files if existing.  Edit files `/etc/ffmpeg-convert.conf` or `$HOME/.ffmpeg-convert` where appropriate.  The default settings are defined as follows:
 
@@ -57,21 +59,22 @@ OPTS=-map 0:v -map 0:a? -c:v h264 -crf 23 -c:a copy
 EXT=mp4
 
 # Default output filename suffix
-NAME=convert
+NAME=
+
+# Default output directory
+DIR=
 
 # Permission to overwrite existing files
 YES=0
 ```
 
-## See also
-
-(...)
 
 ## Contributing
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
 Please make sure to update tests as appropriate.
+
 
 ## License
 
