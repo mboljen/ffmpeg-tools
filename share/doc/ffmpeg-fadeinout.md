@@ -1,13 +1,11 @@
 # ffmpeg-fadeinout
 
-A recent version of **FFmpeg** is required.
-
-This utlity is part of the bundle `ffmpeg-tools` documented [here](../../README.md).
+This script is part of the bundle `ffmpeg-tools` documented [here](../../README.md).
 
 
 ## Description
 
-Adds a fade-in and fade-out effect to one or several video files.
+This script adds fade-in and fade-out effects to one or several video files.
 
 
 ## Synopsis

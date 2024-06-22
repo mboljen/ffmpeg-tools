@@ -1,13 +1,11 @@
 # ffmpeg-watermark
 
-A recent version of **FFmpeg** is required.
-
-This utlity is part of the bundle `ffmpeg-tools` documented [here](../../README.md).
+This script is part of the bundle `ffmpeg-tools` documented [here](../../README.md).
 
 
 ## Description
 
-Adds a watermark to a certain position in one or several media files.
+This script adds a watermark to a certain position in one or several media files.
 
 
 ## Synopsis

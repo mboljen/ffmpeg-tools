@@ -1,13 +1,11 @@
 # ffmpeg-convert
 
-A recent version of **FFmpeg** is required.
-
-This utlity is part of the bundle `ffmpeg-tools` documented [here](../../README.md).
+This script is part of the bundle `ffmpeg-tools` documented [here](../../README.md).
 
 
 ## Description
 
-Converts one or several video files.
+This script converts one or several video files.
 
 
 ## Synopsis

@@ -1,13 +1,11 @@
 # ffmpeg-audioshift
 
-A recent version of **FFmpeg** is required.
-
-This utlity is part of the bundle `ffmpeg-tools` documented [here](../../README.md).
+This script is part of the bundle `ffmpeg-tools` documented [here](../../README.md).
 
 
 ## Description
 
-Offsets the audio track of one or several video files.
+This script offsets the audio track of one or several video files.
 
 
 ## Synopsis

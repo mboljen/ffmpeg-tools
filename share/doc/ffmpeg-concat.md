@@ -1,13 +1,11 @@
 # ffmpeg-concat
 
-A recent version of **FFmpeg** is required.
-
-This utlity is part of the bundle `ffmpeg-tools` documented [here](../../README.md).
+This script is part of the bundle `ffmpeg-tools` documented [here](../../README.md).
 
 
 ## Description
 
-Concatenates multiple video files.
+This script concatenates multiple video files.
 
 **FFmpeg** has three concatenation methods:
 

@@ -10,6 +10,9 @@ This collections provides the following wrappers for **FFmpeg**:
 + [ffmpeg-gamma](share/doc/ffmpeg-gamma.md)
 + [ffmpeg-watermark](share/doc/ffmpeg-watermark.md)
 
+
+## Requirements
+
 A recent version of **FFmpeg** is required.
 
 

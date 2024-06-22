@@ -1,13 +1,11 @@
 # ffmpeg-gamma
 
-A recent version of **FFmpeg** is required.
-
-This utlity is part of the bundle `ffmpeg-tools` documented [here](../../README.md).
+This script is part of the bundle `ffmpeg-tools` documented [here](../../README.md).
 
 
 ## Description
 
-Enhances gamma and saturation of one or several video files.
+This script enhances gamma and saturation of one or several video files.
 
 
 ## Synopsis
