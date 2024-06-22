@@ -1,28 +1,34 @@
-# ffmpeg-audioshift
+# ffmpeg-fadeinout
 
-Offset the audio track of one or several video files.
+A recent version of **FFmpeg** is required.
 
-A recent version of `ffmpeg` is required.
-
-This utlity is part of the bundle `ffmpeg-tools` documented [here](../README.md).
+This utlity is part of the bundle `ffmpeg-tools` documented [here](../../README.md).
 
 ## Description
 
-(...)
+Adds a fade-in and fade-out effect to one or several video files.
 
 ## Usage
 
 ### Synopsis
 
 ```console
-$ ffmpeg-audioshift [OPTION]... INFILE...
+$ ffmpeg-fadeinout [OPTION]... INFILE...
 ```
 
 ### Options
 
-- **-o**, **--offset**=_time_
+- **-t**, **--time**=_value_
 
-  Offset audio stream of file `infile` with respect to video by `time` seconds
+  Set fade duration in seconds (default: `5`)
+
+- **-m**, **--mode**=_value_
+
+  Set fade mode: fade-in only (`i`), fade-out only (`o`), both (default: `b`)
+
+- **-s**, **--stream**=_value_
+
+  Fade video stream only (`v`), audio stream only ( `a`), or both (default: `b`)
 
 - **-n**, **--name**=_value_
 
@@ -36,7 +42,7 @@ $ ffmpeg-audioshift [OPTION]... INFILE...
 
   Overwrite existing files
 
-## See also
+### See also
 
 (...)
 

@@ -1,36 +1,50 @@
-BASEDIR := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
+NAME=ffmpeg-tools
+VERSION=0.1
 
-SILENT := @
+DIRS=bin etc share
+INSTALL_DIRS=`find $(DIRS) -type d 2>/dev/null`
+INSTALL_FILES=`find $(DIRS) -type f 2>/dev/null`
+DOC_FILES=$(wildcard *.md *.txt)
 
-NAME = ffmpeg-tools
-VERSION = 0.1
-
-TOPTARGETS = build test install uninstall clean veryclean
-
-PKG_DIR=pkg
 PKG_NAME=$(NAME)-$(VERSION)
-PKG=$(PKG_DIR)/$(PKG_NAME).tar.gz
-SIG=$(PKG_DIR)/$(PKG_NAME).asc
 
 PREFIX?=/usr/local
+DOC_DIR=$(PREFIX)/share/doc/$(PKG_NAME)
 
-# Forward top targets to sub directories
-$(TOPTARGETS): $(sort $(dir $(wildcard $(BASEDIR)/*/)))
-	$(SILENT)$(foreach path, $^, $(MAKE) -C $(path) $@;)
+BIN=$(notdir $(wildcard bin/*))
 
-all: build $(PKG) $(SIG)
+MAN_DIR=share/man/man1
+MAN=$(addprefix $(MAN_DIR)/, $(addsuffix .1.gz, $(BIN)))
 
-release: $(PKG) $(SIG) tag
+build: $(MAN)
 
-sign: $(SIG)
+all: build
 
-$(SIG): $(PKG)
-	gpg --sign --detach-sign --armor $(PKG)
+man:
+	mkdir -p $(MAN_DIR)
 
-$(PKG): pkg
-	git archive --output=$(PKG) --prefix=$(PKG_NAME)/ HEAD
+$(MAN): man
 
-pkg:
-	mkdir -p $(PKG_DIR)
+$(MAN_DIR)/%.1.gz: bin/%
+	help2man --no-discard-stderr --version-string=${VERSION} $< | gzip -9 > $@
 
-.PHONY: build test install uninstall clean veryclean release sign all
+clean:
+	$(RM) $(MAN)
+
+veryclean: clean
+	$(RM) -r -d share
+
+test:
+	$(warning not implemented yet)
+
+install:
+	for dir in $(INSTALL_DIRS); do mkdir -p $(PREFIX)/$$dir; done
+	for file in $(INSTALL_FILES); do cp -u $$file $(PREFIX)/$$file; done
+	mkdir -p $(DOC_DIR)
+	cp -r $(DOC_FILES) $(DOC_DIR)/
+
+uninstall:
+	for file in $(INSTALL_FILES); do rm -f $(PREFIX)/$$file; done
+	$(RM) -r $(DOC_DIR)
+
+.PHONY: build man clean test install uninstall all

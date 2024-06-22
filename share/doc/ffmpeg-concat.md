@@ -1,14 +1,14 @@
 # ffmpeg-concat
 
-Concatenate multiple video files.
+A recent version of **FFmpeg** is required.
 
-A recent version of `ffmpeg` is required.
-
-This utlity is part of the bundle `ffmpeg-tools` documented [here](../README.md).
+This utlity is part of the bundle `ffmpeg-tools` documented [here](../../README.md).
 
 ## Description
 
-FFmpeg has three concatenation methods:
+Concatenates multiple video files.
+
+**FFmpeg** has three concatenation methods:
 
 1. **concat filter**
 

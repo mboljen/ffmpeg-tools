@@ -1,14 +1,12 @@
 # ffmpeg-convert
 
-Convert one or several video files.
+A recent version of **FFmpeg** is required.
 
-A recent version of `ffmpeg` is required.
-
-This utlity is part of the bundle `ffmpeg-tools` documented [here](../README.md).
+This utlity is part of the bundle `ffmpeg-tools` documented [here](../../README.md).
 
 ## Description
 
-(...)
+Converts one or several video files.
 
 ## Usage
 
@@ -26,7 +24,7 @@ $ ffmpeg-convert [OPTION]... INFILE...
 
 - **-o**, **--option**=_value_
 
-  Set `ffmpeg` option and value (can be used multiple times)
+  Set **FFmpeg** option and value (can be used multiple times)
 
 - **-e**, **--extension**=_value_
 
@@ -52,7 +50,7 @@ The wrapper parses local and user-defined configuration files if existing.  Edit
 # Setting for cropdetect (auto|disabled)
 CROP=disabled
 
-# Default ffmpeg settings
+# Default FFmpeg settings
 OPTS=-map 0:v -map 0:a? -c:v h264 -crf 23 -c:a copy
 
 # Default file extension for output files

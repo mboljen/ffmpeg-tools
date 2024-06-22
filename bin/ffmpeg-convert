@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Created:         So 2023-08-06 01:34:08 CEST
-# Last Modified:   So 2024-06-16 18:04:40 CEST
+# Last Modified:   Sa 2024-06-22 17:50:38 CEST
 #
 # ffmpeg-convert:
 #   Convert one or several video files.
@@ -61,8 +61,7 @@ OPTS=()
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 # Parse local and user-defined configuration files
-for file in "/etc/ffmpeg-convert.conf" \
-            "$SCRIPT_DIR/../etc/ffmpeg-convert.conf" \
+for file in "$SCRIPT_DIR/../etc/ffmpeg-convert.conf" \
             "$HOME/.ffmpeg-convert"
 do
     if [ -f "$file" ]

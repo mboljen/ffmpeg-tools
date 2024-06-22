@@ -1,14 +1,12 @@
 # ffmpeg-watermark
 
-Add a watermark to a certain position in one or several media files.
+A recent version of **FFmpeg** is required.
 
-A recent version of `ffmpeg` is required.
-
-This utlity is part of the bundle `ffmpeg-tools` documented [here](../README.md).
+This utlity is part of the bundle `ffmpeg-tools` documented [here](../../README.md).
 
 ## Description
 
-(...)
+Adds a watermark to a certain position in one or several media files.
 
 ## Usage
 
@@ -18,7 +16,7 @@ This utlity is part of the bundle `ffmpeg-tools` documented [here](../README.md)
 $ ffmpeg-watermark [OPTION]... WATERMARK INFILE...
 ```
 
-#### Options
+### Options
 
 - **-a**, **--anchor**=_value_
 

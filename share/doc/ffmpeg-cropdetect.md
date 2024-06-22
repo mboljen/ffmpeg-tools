@@ -1,14 +1,12 @@
 # ffmpeg-cropdetect
 
-Detect black margins of one or several video files.
+A recent version of **FFmpeg** is required.
 
-A recent version of `ffmpeg` is required.
-
-This utlity is part of the bundle `ffmpeg-tools` documented [here](../README.md).
+This utlity is part of the bundle `ffmpeg-tools` documented [here](../../README.md).
 
 ## Description
 
-(...)
+Detects black margins of one or several video files.
 
 ## Usage
 
@@ -18,7 +16,7 @@ This utlity is part of the bundle `ffmpeg-tools` documented [here](../README.md)
 $ ffmpeg-cropdetect [OPTION]... INFILE...
 ```
 
-#### Options
+### Options
 
 - **-s**, **--skip**=_value_
 
@@ -34,7 +32,7 @@ $ ffmpeg-cropdetect [OPTION]... INFILE...
 
 ## See also
 
-...
+(...)
 
 ## Contributing
 
