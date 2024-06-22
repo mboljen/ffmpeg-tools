@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Created:         So 2023-08-06 01:34:08 CEST
-# Last Modified:   Sa 2024-06-22 17:50:38 CEST
+# Last Modified:   Sa 2024-06-22 18:40:53 CEST
 #
 # ffmpeg-convert:
 #   Convert one or several video files.
@@ -21,7 +21,7 @@ OPTIONS:
   -o, --option=OPTION [VALUE]  Set FFmpeg option and value (can be used multiple times)
   -e, --extension=VALUE        Set file extension of output file (default: 'mp4')
   -n, --name=VALUE             Set output filename suffix (default: 'none')
-  -d, --directory=VALUE        Set output directory (default: 'convert')
+  -d, --directory=VALUE        Set output directory and reset suffix (default: 'convert')
   -y, --yes                    Overwrite existing files
   -h, --help                   Show this help message and exit
 
@@ -70,6 +70,7 @@ do
         confget -c -f "$file" OPTS && mapfile -t OPTS < <( confget -nf "$file" OPTS )
         confget -c -f "$file" EXT  &&  EXT=$(confget -nf "$file" EXT)
         confget -c -f "$file" NAME && NAME=$(confget -nf "$file" NAME)
+        confget -c -f "$file" DIR  &&  DIR=$(confget -nf "$file" DIR)
         confget -c -f "$file" YES  &&  YES=$(confget -nf "$file" YES)
     fi
 done
@@ -106,9 +107,9 @@ do
 
       -e | --extension)   EXT=$2  ; shift 2 ;;
       -n | --name)        NAME=$2 ; shift 2 ;;
-      -d | --directory)   DIR=$2  ; shift 2 ;;
-      -y | --yes)         YES=1   ; shift   ;;
-      -h | --help)        usage   ; shift   ; exit 0 ;;
+      -d | --directory)   DIR=$2  ; NAME= ; shift 2 ;;
+      -y | --yes)         YES=1   ; shift ;;
+      -h | --help)        usage   ; shift ; exit 0 ;;
       # -- means the end of the arguments; drop this, and break out of the while loop
       --) shift; break ;;
        *) echoerr "Unsupported option: $1"; usage ; shift; exit 1 ;;
@@ -191,22 +192,33 @@ do
     # Replace file extension
     OUTFILE="${INFILE%.*}.$EXT"
 
-    # Rename output file if it matches input filename
-    if [ "$OUTFILE" = "$INFILE" ] || [ -z "$NAME" ]
-    then
-        OUTFILE="$DIR/$OUTFILE"
-    else
-        OUTFILE="$DIR/${INFILE%.*}-$NAME.$EXT"
-    fi
+    # Add output directory to output filename
+    [ $(stat -c "%i" "$DIR") -ne $(stat -c "%i" $(pwd)) ] && OUTFILE="$DIR/$OUTFILE"
 
+    # For debugging
     echo "INFILE  = $INFILE"
     echo "OUTFILE = $OUTFILE"
 
     # Check if output file already exists
-    if [ -f "$OUTFILE" ] && [ "$YES" -eq 0 ]
+    if [ -f "$OUTFILE" ]
     then
-        echoerr "Outfile $OUTFILE already exists, skipped"
-        continue
+
+        # Output file already exists
+        if [ $(stat -c "%i" "$INFILE") -eq $(stat -c "%i" "$OUTFILE") ]
+        then
+
+            # Infile and outfile are physically the same file
+            echoerr "Infile and outfile are the same file, skipped"
+            continue
+
+        elif [ "$YES" -eq 0 ]
+        then
+
+            # Overwrite permission is not granted
+            echoerr "Outfile $OUTFILE already exists, skipped"
+            continue
+
+        fi
     fi
 
     # Set crop option
