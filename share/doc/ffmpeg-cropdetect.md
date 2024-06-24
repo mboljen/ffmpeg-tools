@@ -1,11 +1,6 @@
 # ffmpeg-cropdetect
 
-This script is part of the bundle `ffmpeg-tools` documented [here](../../README.md).
-
-
-## Description
-
-This script detects black margins of one or several video files.
+Detect black margins of one or several video files
 
 
 ## Synopsis
@@ -15,19 +10,24 @@ $ ffmpeg-cropdetect [OPTION]... INFILE...
 ```
 
 
+## Description
+
+This script detects black margins of one or several video files.
+
+
 ## Options
 
-+ **-s**, **--skip**=_value_
++ `-s`, `--skip` _value_
 
   Set the number of seconds skipped from the beginning.  The default of _value_ is 2 percent of the total duration of the video.
 
-+ **-t**, **--time**=_value_
++ `-t`, `--time` _value_
 
   Set the number of seconds to be scanned.  The default of _value_ is 5 percent of the total duration of the video.
 
-+ **-c**, **--cropdetect**=_limit_:_round_:_skip_:_reset_
++ `-c`, `--cropdetect` _limit_:_round_:_skip_:_reset_
 
-  Set the `cropdetect` filter of **ffmpeg** (default: "24:16:2:0").
+  Set the `cropdetect` filter of **FFmpeg** (default: `24:16:2:0`).
 
 
 ## Contributing
@@ -35,6 +35,11 @@ $ ffmpeg-cropdetect [OPTION]... INFILE...
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
 Please make sure to update tests as appropriate.
+
+
+## See also
+
+This script is part of the bundle `ffmpeg-tools` documented [here](../../README.md).
 
 
 ## License

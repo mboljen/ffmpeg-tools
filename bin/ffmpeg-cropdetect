@@ -4,17 +4,16 @@
 # Last Modified:   So 2024-06-16 16:53:48 CEST
 #
 # ffmpeg-cropdetect:
-#   Detect black margins of one or several video files.
-#
+#   Detect black margins of one or several video files
+
 set -euo pipefail
 
 # Help text
 usage() {
 >&2 cat << EOF
+Detect black margins of one or several video files
 
 Usage: ffmpeg-cropdetect [OPTION]... INFILE...
-
-Detect black margins of one or several video files.
 
 Options:
   -s, --skip=VALUE        Skip time (default: 2% of total time)
@@ -25,7 +24,6 @@ Options:
                           SKIP  = inital frames skipped (default: 2)
                           RESET = frames to restart detection process (default: 0)
   -h, --help              Show this help message and exit
-
 EOF
 }
 

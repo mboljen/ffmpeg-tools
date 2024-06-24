@@ -4,17 +4,16 @@
 # Last Modified:   So 2024-06-16 18:04:37 CEST
 #
 # ffmpeg-fadeinout:
-#    Add a fade-in and fade-out effect to one or several video files.
-#
+#    Add a fade-in and fade-out effect to one or several video files
+
 set -euo pipefail
 
 # Help text
 usage() {
 >&2 cat << EOF
+Add a fade-in and fade-out effect to one or several video files
 
 Usage: ffmpeg-fadeinout [OPTION]... INFILE...
-
-Add a fade-in and fade-out effect to one or several video files.
 
 Options:
   -t, --time=VALUE       Fade duration in seconds (default: 5)
@@ -24,7 +23,6 @@ Options:
   -d, --directory=VALUE  Set output directory (default: 'fadeinout')
   -y, --yes              Overwrite existing files
   -h, --help             Show this help message and exit
-
 EOF
 }
 

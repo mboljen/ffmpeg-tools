@@ -4,23 +4,21 @@
 # Last Modified:   So 2024-06-16 17:03:33 CEST
 #
 # ffmpeg-concat:
-#   Concatenate multiple video files.
-#
+#   Concatenate multiple video files
+
 set -euo pipefail
 
 # Help text
 usage() {
 >&2 cat << EOF
+Concatenate multiple video files
 
 Usage: ffmpeg-concat [OPTION]... INFILE... OUTFILE
-
-Concatenate multiple video files.
 
 Options:
   -m, --method=METHOD    Select concatanation method: filter (default), demuxer, protocol
   -y, --yes              Overwrite existing files
   -h, --help             Show this help message and exit
-
 EOF
 }
 

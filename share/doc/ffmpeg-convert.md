@@ -1,11 +1,6 @@
 # ffmpeg-convert
 
-This script is part of the bundle `ffmpeg-tools` documented [here](../../README.md).
-
-
-## Description
-
-This script converts one or several video files.
+Convert one or several video files
 
 
 ## Synopsis
@@ -15,29 +10,34 @@ $ ffmpeg-convert [OPTION]... INFILE...
 ```
 
 
+## Description
+
+This script converts one or several video files.
+
+
 ## Options
 
-+ **-c**, **--cropdetect**=_value_
++ `-c`, `--cropdetect` _value_
 
   Set cropdetect to remove black borders (default: `auto`)
 
-+ **-o**, **--option**=_value_
++ `-o`, `--option` _value_
 
   Set **FFmpeg** option and value (can be used multiple times)
 
-+ **-e**, **--extension**=_value_
++ `-e`, `--extension` _value_
 
   Set file extension of output file (default: `mp4`)
 
-+ **-n**, **--name**=_value_
++ `-n`, `--name` _value_
 
   Set default output filename suffix (default: `none`)
 
-+ **-d**, **--directory**=_value_
++ `-d`, `--directory` _value_
 
   Set an optional directory to where to write the files (default: `none`)
 
-+ **-y**, **--yes**
++ `-y`, `--yes`
 
   Overwrite existing files
 
@@ -72,6 +72,11 @@ YES=0
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
 Please make sure to update tests as appropriate.
+
+
+## See also
+
+This script is part of the bundle `ffmpeg-tools` documented [here](../../README.md).
 
 
 ## License

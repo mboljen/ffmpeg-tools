@@ -4,17 +4,16 @@
 # Last Modified:   So 2024-06-16 18:04:41 CEST
 #
 # ffmpeg-audioshift:
-#   Delay the audio or video stream of one or several video files.
-#
+#   Delay the audio or video stream of one or several video files
+
 set -euo pipefail
 
 # Help text
 usage() {
 >&2 cat << EOF
+Delay the audio or video stream of one or several video files
 
 Usage: ffmpeg-audioshift [OPTION]... INFILE...
-
-Delay the audio or video stream of one or several video files.
 
 Options:
   -o, --offset=VALUE     Offset audio track in seconds (default: 0).  Positive values delay the audio track.
@@ -22,7 +21,6 @@ Options:
   -d, --directory=VALUE  Set output directory (default: 'pwd')
   -y, --yes              Overwrite existing files
   -h, --help             Show this help message and exit
-
 EOF
 }
 

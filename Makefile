@@ -13,8 +13,9 @@ DOC_DIR=$(PREFIX)/share/doc/$(PKG_NAME)
 
 BIN=$(notdir $(wildcard bin/*))
 
-MAN_DIR=share/man/man1
-MAN=$(addprefix $(MAN_DIR)/, $(addsuffix .1.gz, $(BIN)))
+MAN_SECTION ?= 1
+MAN_DIR = share/man/man$(MAN_SECTION)
+MAN=$(addprefix $(MAN_DIR)/, $(addsuffix .$(MAN_SECTION).gz, $(BIN)))
 
 build: $(MAN)
 
@@ -26,16 +27,19 @@ man:
 $(MAN): man
 
 $(MAN_DIR)/%.1.gz: bin/%
-	help2man --no-discard-stderr --version-string=${VERSION} $< | gzip -9 > $@
+	help2man --name="$(shell $< -h 2>&1 | head -n 1)" \
+		 --no-discard-stderr \
+		 --version-string=$(VERSION) \
+			$< | gzip -9 > $@
 
 clean:
 	$(RM) $(MAN)
 
 veryclean: clean
-	$(RM) -r -d share
+	$(RM) -r -d $(MAN_DIR)
 
 test:
-	$(warning not implemented yet)
+	$(info Target `$@` not implemented yet)
 
 install:
 	for dir in $(INSTALL_DIRS); do mkdir -p $(PREFIX)/$$dir; done
@@ -47,4 +51,4 @@ uninstall:
 	for file in $(INSTALL_FILES); do rm -f $(PREFIX)/$$file; done
 	$(RM) -r $(DOC_DIR)
 
-.PHONY: build man clean test install uninstall all
+.PHONY: build man clean veryclean test install uninstall all

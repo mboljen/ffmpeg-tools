@@ -4,19 +4,18 @@
 # Last Modified:   Sa 2024-06-22 18:40:53 CEST
 #
 # ffmpeg-convert:
-#   Convert one or several video files.
-#
+#   Convert one or several video files
+
 set -euo pipefail
 
 # Help text
 usage() {
 >&2 cat << EOF
+Convert one or several video files
 
 Usage: ffmpeg-convert [OPTION]... INFILE...
 
-Convert one or several video files.
-
-OPTIONS:
+Options:
   -c, --crop=VALUE             Set cropdetect to remove black borders (default: auto)
   -o, --option=OPTION [VALUE]  Set FFmpeg option and value (can be used multiple times)
   -e, --extension=VALUE        Set file extension of output file (default: 'mp4')
@@ -24,7 +23,6 @@ OPTIONS:
   -d, --directory=VALUE        Set output directory and reset suffix (default: 'convert')
   -y, --yes                    Overwrite existing files
   -h, --help                   Show this help message and exit
-
 EOF
 }
 

@@ -1,11 +1,6 @@
 # ffmpeg-fadeinout
 
-This script is part of the bundle `ffmpeg-tools` documented [here](../../README.md).
-
-
-## Description
-
-This script adds fade-in and fade-out effects to one or several video files.
+Add a fade-in and fade-out effect to one or several video files
 
 
 ## Synopsis
@@ -15,29 +10,34 @@ $ ffmpeg-fadeinout [OPTION]... INFILE...
 ```
 
 
+## Description
+
+This script adds fade-in and fade-out effects to one or several video files.
+
+
 ## Options
 
-+ **-t**, **--time**=_value_
++ `-t`, `--time` _value_
 
   Set fade duration in seconds (default: `5`)
 
-+ **-m**, **--mode**=_value_
++ `-m`, `--mode` _value_
 
   Set fade mode: fade-in only (`i`), fade-out only (`o`), both (default: `b`)
 
-+ **-s**, **--stream**=_value_
++ `-s`, `--stream` _value_
 
   Fade video stream only (`v`), audio stream only ( `a`), or both (default: `b`)
 
-+ **-n**, **--name**=_value_
++ `-n`, `--name` _value_
 
   Set default output filename suffix (default: `none`)
 
-+ **-d**, **--directory**=_value_
++ `-d`, `--directory` _value_
 
   Set an optional directory to where to write the files (default: `none`)
 
-+ **-y**, **--yes**
++ `-y`, `--yes`
 
   Overwrite existing files
 
@@ -47,6 +47,11 @@ $ ffmpeg-fadeinout [OPTION]... INFILE...
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
 Please make sure to update tests as appropriate.
+
+
+## See also
+
+This script is part of the bundle `ffmpeg-tools` documented [here](../../README.md).
 
 
 ## License

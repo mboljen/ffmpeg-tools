@@ -4,17 +4,16 @@
 # Last Modified:   So 2024-06-16 18:04:38 CEST
 #
 # ffmpeg-gamma:
-#   Enhance gamma and saturation of one or several video files.
-#
+#   Enhance gamma and saturation of one or several video files
+
 set -euo pipefail
 
 # Help text
 usage() {
 >&2 cat << EOF
+Enhance gamma and saturation of one or several video files
 
 Usage: ffmpeg-gamma [OPTION]... INFILE...
-
-Enhance gamma and saturation of one or several video files.
 
 Options:
   -g, --gamma=VALUE       Set gamma value (default: 1.0)
@@ -23,7 +22,6 @@ Options:
   -d, --directory=VALUE   Set output directory (default: 'gamma')
   -y, --yes               Overwrite existing files
   -h, --help              Show this help message and exit
-
 EOF
 }
 

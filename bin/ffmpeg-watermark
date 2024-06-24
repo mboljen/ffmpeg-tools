@@ -4,17 +4,16 @@
 # Last Modified:   So 2024-06-16 18:04:43 CEST
 #
 # ffmpeg-watermark:
-#   Add a watermark to a certain position in one or several media files.
-#
+#   Add a watermark to a certain position in one or several media files
+
 set -euo pipefail
 
 # Help text
 usage() {
 >&2 cat << EOF
+Add a watermark to a certain position in one or several media files
 
 Usage: ffmpeg-watermark [OPTION]... WATERMARK INFILE...
-
-Add an image WATERMARK at a certain position in one or several media files.
 
 Options:
   -a, --anchor=VALUE      Set anchor of watermark (default: 'ne')
@@ -28,7 +27,6 @@ Options:
   -h, --help              Show this help message and exit
 
 The following values are accepted by the anchor option:  n|north, s|south, e|east, w|west, ne|northeast, nw|northwest, se|southeast, sw|southwest, c|center, and t|tile.
-
 EOF
 }
 
