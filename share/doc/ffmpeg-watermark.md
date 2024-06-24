@@ -14,8 +14,6 @@ $ ffmpeg-watermark [OPTION]... WATERMARK INFILE...
 
 This script adds a watermark to a certain position in one or several media files.
 
-This script is part of the bundle `ffmpeg-tools` documented [here](../../README.md).
-
 
 ## Options
 

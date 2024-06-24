@@ -14,8 +14,6 @@ $ ffmpeg-gamma [OPTION]... INFILE...
 
 This script enhances gamma and saturation of one or several video files.
 
-This script is part of the bundle `ffmpeg-tools` documented [here](../../README.md).
-
 
 ## Options
 

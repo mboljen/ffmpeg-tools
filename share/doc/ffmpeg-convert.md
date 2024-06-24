@@ -14,8 +14,6 @@ $ ffmpeg-convert [OPTION]... INFILE...
 
 This script converts one or several video files.
 
-This script is part of the bundle `ffmpeg-tools` documented [here](../../README.md).
-
 
 ## Options
 

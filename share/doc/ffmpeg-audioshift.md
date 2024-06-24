@@ -14,8 +14,6 @@ $ ffmpeg-audioshift [OPTION]... INFILE...
 
 This script offsets the audio track of one or several video files.
 
-This script is part of the bundle `ffmpeg-tools` documented [here](../../README.md).
-
 
 ## Options
 

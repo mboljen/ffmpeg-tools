@@ -14,8 +14,6 @@ $ ffmpeg-fadeinout [OPTION]... INFILE...
 
 This script adds fade-in and fade-out effects to one or several video files.
 
-This script is part of the bundle `ffmpeg-tools` documented [here](../../README.md).
-
 
 ## Options
 

@@ -28,8 +28,6 @@ This script concatenates multiple video files.
 
    Use this method with formats that support file-level concatenation (MPEG-1, MPEG-2 PS, DV). Do _not_ use with MP4. This method does not work for many formats, including MP4, due to the nature of these formats and the simplistic physical concatenation performed by this method. It is equivalent of just raw joining the files.
 
-This script is part of the bundle `ffmpeg-tools` documented [here](../../README.md).
-
 
 ## Options
 
