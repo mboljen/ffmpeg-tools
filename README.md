@@ -1,6 +1,6 @@
 # ffmpeg-tools
 
-This collections provides the following wrappers for **FFmpeg**:
+This collection provides the following wrappers for **FFmpeg**:
 
 + [ffmpeg-audioshift](share/doc/ffmpeg-audioshift.md)
 + [ffmpeg-concat](share/doc/ffmpeg-concat.md)
@@ -8,6 +8,7 @@ This collections provides the following wrappers for **FFmpeg**:
 + [ffmpeg-cropdetect](share/doc/ffmpeg-cropdetect.md)
 + [ffmpeg-fadeinout](share/doc/ffmpeg-fadeinout.md)
 + [ffmpeg-gamma](share/doc/ffmpeg-gamma.md)
++ [ffmpeg-splitaudio](share/doc/ffmpeg-splitaudio.md)
 + [ffmpeg-watermark](share/doc/ffmpeg-watermark.md)
 
 
@@ -38,6 +39,7 @@ Please make sure to update tests as appropriate.
 ## See also
 
 + [ffmpeg](https://ffmpeg.org/) - A complete, cross-platform solution to record, convert and stream audio and video
++ [atomicparsley](https://github.com/wez/atomicparsley) - Lightweight command line program for reading, parsing and setting metadata into MPEG-4 files
 
 
 ## License

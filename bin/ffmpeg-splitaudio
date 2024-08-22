@@ -1,0 +1,188 @@
+#!/bin/bash
+#
+# Created:         Do 2024-08-22 08:27:21 CEST
+# Last Modified:   Do 2024-08-22 21:31:41 CEST
+#
+# ffmpeg-splitaudio:
+#    Split an Audible audio book into chapter files
+#
+# see also:
+#    https://unix.stackexchange.com/questions/499179/using-ffmpeg-to-split-an-audible-audio-book-into-chapters
+
+set -euo pipefail
+
+# Help text
+usage() {
+>&2 cat << EOF
+Split monolithic audio book into chapter files
+
+Usage: ffmpeg-splitaudio [OPTION]... INFILE...
+
+Options:
+  -t, --to=FORMAT  Set output format
+  -r, --readonly   Extract chapter information only
+  -y, --yes        Overwrite existing files
+  -h, --help       Show this help and exit
+EOF
+}
+
+# Echo error message on STDERR
+echoerr() { cat <<< "$@" 1>&2; }
+
+# Initialization
+FFMPEG=$(command -v ffmpeg)
+FFPROBE=$(command -v ffprobe)
+
+# Check availability of ffmpeg
+if [ ! -x "$FFMPEG" ]
+then
+    echoerr "ffmpeg not found, probably not installed"
+    exit 1
+fi
+
+# Check availability of ffprobe
+if [ ! -x "$FFPROBE" ]
+then
+    echoerr "ffprobe not found, probably not installed"
+    exit 1
+fi
+
+# Defaults
+ro=0
+to=
+yes=0
+
+# Parse command line options
+if ! args=$(getopt -a -o ct:yh --long chapteronly,to:,yes,help -- "$@")
+then
+    echoerr "Error processing command line options"
+    usage
+    exit 1
+fi
+
+# Process command line options
+eval set -- "$args"
+while :
+do
+    case $1 in
+        -r | --readonly) ro=1  ; shift ;;
+        -t | --to)       to=$2 ; shift 2 ;;
+        -y | --yes)      yes=1 ; shift   ;;
+        -h | --help)     usage ; shift   ; exit 0;;
+        # -- means end of the arguments; drop this, and break out of the while loop
+        --) shift; break;;
+         *) echoerr "Unsupported option: $1"; usage; shift; exit 1;;
+     esac
+done
+
+
+# Loop over input files
+for f in "$@"
+do
+
+    # Check if input file exists
+    if [ ! -e "$f" ]
+    then
+        echoerr "Input file $f does not exist, skipped"
+        continue
+    fi
+
+    # Grep file extension
+    ext=${f##*.}
+
+    # Check file extension
+    if [[ "$ext" != "mp3" && "$ext" != "m4a" && "$ext" != "m4b" ]]
+    then
+        echoerr "Input file $f has invalid extension, skipped"
+        continue
+    fi
+
+    # Remove extension from input filename
+    shortname=$(basename "$f" ".$ext")
+
+    # Metadata file containing chapter information
+    chapterdata="$shortname.json"
+
+    # Set target format automatically unless defined
+    [ -z "$to" ] && to="$ext"
+
+    # Check target format
+    if [[ "$ext" == "$to" ]]
+    then
+        # Source and target format are identical
+        codec="copy"
+    elif [[ $to == "mp3" ]]
+    then
+        # Convert to MP3
+        codec="libmp3lame"
+    else
+        # Unsupported target format
+        echoerr "Unsupported extension $to."
+        exit 1
+    fi
+
+    # Create chapter file if it does not exist already
+    if [ ! -e "$chapterdata" ]
+    then
+        "$FFPROBE" -i "$f" \
+            -print_format json \
+            -show_chapters \
+            -loglevel error \
+            -sexagesimal > "$chapterdata"
+    fi
+
+    # Skip rest if chapteronly flag is enabled
+    [ "$ro" -eq 1 ] && continue
+
+    # Read chapterdata file
+    readarray -t id    <<< $(jq -r '.chapters[].id'         "$chapterdata")
+    readarray -t start <<< $(jq -r '.chapters[].start_time' "$chapterdata")
+    readarray -t end   <<< $(jq -r '.chapters[].end_time'   "$chapterdata")
+    readarray -t title <<< $(jq -r '.chapters[].tags.title' "$chapterdata")
+
+    # Create output directory and print header
+    mkdir -p "$shortname"
+    echo -e "\fID\tStart Time\tEnd Time\tTitle\tFilename"
+
+    # Loop over chapters
+    for i in ${!id[@]}
+    do
+
+        # Increment chapter counter
+        let trackno=$i+1
+
+        # Build output filename
+        outname="$shortname/$(printf "%02d" $trackno) - $shortname - ${title[$i]}.$to"
+        outname=$(sed -e 's/\s\+-\s\+/-/g' <<< $outname)
+        outname=$(sed -e 's/\s\+/-/g' <<< $outname)
+        outname=$(sed 's/:/_/g' <<< $outname)
+
+        # Print message
+        echo -e "${id[$i]}\t${start[$i]}\t${end[$i]}\t${title[$i]}\n\t\t$(basename "$outname")"
+
+        if [ -e "$outname" ] && [ "$yes" -ne 1 ]
+        then
+            echo "Output file $outname already exists, skipped"
+            continue
+        fi
+
+        # Extract chapter from input file
+        "$FFMPEG" \
+            -loglevel error \
+            -y \
+            -i "$f" \
+            -vn \
+            -c "$codec" \
+            -ss ${start[$i]} \
+            -to ${end[$i]} \
+            -metadata title="${title[$i]}" \
+            -metadata track=$trackno \
+            -map_metadata 0 \
+            -id3v2_version 3 \
+                "$outname"
+
+    # End chapter loop
+    done
+
+# End file loop
+done
