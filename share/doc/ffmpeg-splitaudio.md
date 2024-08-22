@@ -12,7 +12,7 @@ $ ffmpeg-splitaudio [OPTION]... INFILE...
 
 ## Description
 
-[here]
+This tool read the chapter information (if available) from an monolithic audiobook and crop all identified chapters into individual audio files.  Output files will be written to an output directory named by the basename of the input file.
 
 
 ## Options
@@ -35,6 +35,11 @@ $ ffmpeg-splitaudio [OPTION]... INFILE...
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
 Please make sure to update tests as appropriate.
+
+
+## See also
+
+- [StackExchange](https://unix.stackexchange.com/questions/499179/using-ffmpeg-to-split-an-audible-audio-book-into-chapters)
 
 
 ## License

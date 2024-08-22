@@ -39,7 +39,6 @@ Please make sure to update tests as appropriate.
 ## See also
 
 + [ffmpeg](https://ffmpeg.org/) - A complete, cross-platform solution to record, convert and stream audio and video
-+ [atomicparsley](https://github.com/wez/atomicparsley) - Lightweight command line program for reading, parsing and setting metadata into MPEG-4 files
 
 
 ## License
