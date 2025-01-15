@@ -2,12 +2,12 @@
 
 This collection provides the following wrappers for **FFmpeg**:
 
-+ [ffmpeg-audioshift](share/doc/ffmpeg-audioshift.md)
 + [ffmpeg-concat](share/doc/ffmpeg-concat.md)
 + [ffmpeg-convert](share/doc/ffmpeg-convert.md)
 + [ffmpeg-cropdetect](share/doc/ffmpeg-cropdetect.md)
 + [ffmpeg-fadeinout](share/doc/ffmpeg-fadeinout.md)
 + [ffmpeg-gamma](share/doc/ffmpeg-gamma.md)
++ [ffmpeg-offset](share/doc/ffmpeg-offset.md)
 + [ffmpeg-splitaudio](share/doc/ffmpeg-splitaudio.md)
 + [ffmpeg-watermark](share/doc/ffmpeg-watermark.md)
 

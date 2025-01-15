@@ -1,12 +1,12 @@
-# ffmpeg-audioshift
+# ffmpeg-offset
 
-Delay the audio or video stream of one or several video files
+Offset audio stream of one or several video files
 
 
 ## Synopsis
 
 ```console
-$ ffmpeg-audioshift [OPTION]... INFILE...
+$ ffmpeg-offset [OPTION]... INFILE...
 ```
 
 

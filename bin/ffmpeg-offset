@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
 # Created:         Mo 2019-08-26 11:18:48 CEST
-# Last Modified:   So 2024-06-16 18:04:41 CEST
+# Last Modified:   So 2024-12-15 09:15:08 CET
 #
-# ffmpeg-audioshift:
+# ffmpeg-offset:
 #   Delay the audio or video stream of one or several video files
 
 set -euo pipefail
@@ -11,9 +11,9 @@ set -euo pipefail
 # Help text
 usage() {
 >&2 cat << EOF
-Delay the audio or video stream of one or several video files
+Offset audio stream of one or several video files
 
-Usage: ffmpeg-audioshift [OPTION]... INFILE...
+Usage: ffmpeg-offset [OPTION]... INFILE...
 
 Options:
   -o, --offset=VALUE     Offset audio track in seconds (default: 0).  Positive values delay the audio track.

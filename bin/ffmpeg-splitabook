@@ -1,9 +1,9 @@
 #!/bin/bash
 #
 # Created:         Do 2024-08-22 08:27:21 CEST
-# Last Modified:   Do 2024-08-22 21:31:41 CEST
+# Last Modified:   Sa 2025-01-04 11:52:03 CET
 #
-# ffmpeg-splitaudio:
+# ffmpeg-splitabook:
 #    Split an Audible audio book into chapter files
 #
 # see also:
@@ -16,11 +16,11 @@ usage() {
 >&2 cat << EOF
 Split monolithic audio book into chapter files
 
-Usage: ffmpeg-splitaudio [OPTION]... INFILE...
+Usage: ffmpeg-splitabook [OPTION]... INFILE...
 
 Options:
   -t, --to=FORMAT  Set output format
-  -r, --readonly   Extract chapter information only
+  -f, --fetchonly  Fetch chapter information only
   -y, --yes        Overwrite existing files
   -h, --help       Show this help and exit
 EOF
@@ -48,12 +48,12 @@ then
 fi
 
 # Defaults
-ro=0
+fetchonly=0
 to=
 yes=0
 
 # Parse command line options
-if ! args=$(getopt -a -o ct:yh --long chapteronly,to:,yes,help -- "$@")
+if ! args=$(getopt -a -o t:fyh --long to:,fetchonly,yes,help -- "$@")
 then
     echoerr "Error processing command line options"
     usage
@@ -65,10 +65,10 @@ eval set -- "$args"
 while :
 do
     case $1 in
-        -r | --readonly) ro=1  ; shift ;;
-        -t | --to)       to=$2 ; shift 2 ;;
-        -y | --yes)      yes=1 ; shift   ;;
-        -h | --help)     usage ; shift   ; exit 0;;
+        -t | --to)        to=$2; shift 2;;
+        -f | --fetchonly) fetchonly=1; shift;;
+        -y | --yes)       yes=1; shift;;
+        -h | --help)      usage; shift; exit 0;;
         # -- means end of the arguments; drop this, and break out of the while loop
         --) shift; break;;
          *) echoerr "Unsupported option: $1"; usage; shift; exit 1;;
@@ -109,30 +109,41 @@ do
     # Check target format
     if [[ "$ext" == "$to" ]]
     then
+
         # Source and target format are identical
         codec="copy"
+
     elif [[ $to == "mp3" ]]
     then
+
         # Convert to MP3
         codec="libmp3lame"
+
     else
+
         # Unsupported target format
         echoerr "Unsupported extension $to."
         exit 1
+
     fi
 
     # Create chapter file if it does not exist already
     if [ ! -e "$chapterdata" ]
     then
+
+        #
         "$FFPROBE" -i "$f" \
             -print_format json \
             -show_chapters \
             -loglevel error \
             -sexagesimal > "$chapterdata"
+
+        # Check output of FFPROBE, if empty invoke editor to set list manually
+
     fi
 
-    # Skip rest if chapteronly flag is enabled
-    [ "$ro" -eq 1 ] && continue
+    # Skip rest if fetchonly flag is active
+    [ "$fetchonly" -eq 1 ] && continue
 
     # Read chapterdata file
     readarray -t id    <<< $(jq -r '.chapters[].id'         "$chapterdata")

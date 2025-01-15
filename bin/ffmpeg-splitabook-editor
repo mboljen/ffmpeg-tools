@@ -1,0 +1,741 @@
+#!/usr/bin/env perl
+#
+# Created:        So 2024-12-15 09:23:41 CET
+# Last Modified:  So 2025-01-05 01:00:43 CET
+#
+# ffmpeg-splitabook-editor:
+#   Create, edit, save JSON tracklist manually
+
+use strict;
+use warnings;
+
+use Data::Dumper;
+use File::stat;
+use File::Copy;
+use File::Slurp;
+use Getopt::Long;
+use List::Util qw(min max);
+use JSON::PP;
+use Term::ReadKey;
+use Pod::Usage;
+use POSIX;
+use Regexp::Common;
+
+#
+my ($help,$man,$total) = (0,0);
+
+#
+GetOptions(
+    'total=s' => \$total,
+    'help|?'  => \$help,
+    'man'     => \$man,
+) or pod2usage(2);
+
+#
+pod2usage(1) if $help;
+pod2usage(-exitval => 0, -verbose => 2) if $man;
+
+#
+my $calctotal = not defined $total;
+my $needbackup = 1;
+my $ismodified = 0;
+my $ref;
+
+#
+$total = time2value($total) unless $calctotal;
+
+#
+my $jsonfile = shift @ARGV;
+
+#
+die "Filename missing" unless defined $jsonfile;
+
+# Create JSON object
+my $json = JSON::PP->new->utf8->pretty->allow_nonref;
+
+if (-f $jsonfile)
+{
+    # Read from file
+    my $jsontext = read_file($jsonfile);
+
+    # Check input
+
+    # Decode input
+    $ref = $json->decode($jsontext);
+}
+else
+{
+    # Initialize empty Perl reference
+    $ref = { 'chapters' => [] };
+}
+
+my $command;
+
+
+# Get Control characters
+my %ctrl = GetControlChars();
+
+# Start pseudo-loop
+READCOM: while (not defined $command)
+{
+    # Initialize ID
+    my $id = 0;
+
+    # Sort track table
+    foreach my $href (sort { $a->{start} <=> $b->{start} } @{$ref->{chapters}})
+    {
+        # Update ID
+        $href->{id} = $id++;
+
+        # Update start and end times
+        $href->{start_time} = value2time($href->{start}, $href->{time_base});
+        $href->{end_time}   = value2time($href->{end},   $href->{time_base});
+    }
+
+    # Reset ID
+    $id = undef;
+
+    #
+    $total = max_end_time() if $calctotal;
+
+    # Fetch ID list
+    my @allow = tracklist();
+
+    #
+    show() if scalar @allow;
+
+    #
+    printf "\n" .
+        "FFMPEG-SPLITAUDIO-EDITOR\n" .
+        "stats: %d tracks, total time: %s\n\n" .
+        " [a] ... add\n" .
+        "%s" .
+        " [s] ... save\n" .
+        " [q] ... quit\n\n",
+            scalar keys @{$ref->{chapters}}, value2time($total),
+            scalar @allow > 0 ? " [e] ... edit\n".
+                                " [r] ... remove\n" : "";
+
+    #
+    print "Enter command [quit] : ";
+    while (not defined $command)
+    {
+        # Wait for command key to be pressed
+        ReadMode 4;
+        while (not defined ($command = ReadKey(0)))
+        {
+            last if $command eq $ctrl{EOF}
+                 or $command eq $ctrl{EOL}
+                 or $command eq $ctrl{QUIT}
+                 or $command eq $ctrl{INTERRUPT}
+                 or $command eq "\n"
+                 or $command eq "\e";
+        }
+        ReadMode 0;
+
+        #
+        if    ($command =~ /^a/i)                   { $command = 'add';    }
+        elsif ($command =~ /^e/i and scalar @allow) { $command = 'edit';   }
+        elsif ($command =~ /^s/i)                   { $command = 'save';   }
+        elsif ($command =~ /^r/i and scalar @allow) { $command = 'remove'; }
+        elsif ($command =~ /^q/i
+                or ord($command)==3
+                or ord($command)==27)               { $command = 'quit';   }
+        else
+        {
+            # Reset input, redo loop
+            $command = undef;
+        }
+    }
+
+    # Print verified command
+    print "$command ";
+
+    #
+    if ($command =~ m/^(?:edit|remove)$/i)
+    {
+        # Get track ID
+        my $key;
+        while (not defined $id or $id eq '')
+        {
+            #
+            ReadMode 4;
+            while (not defined ($key = ReadKey(0)))
+            {
+                last if $key eq $ctrl{EOF}
+                     or $key eq $ctrl{EOL}
+                     or $key eq $ctrl{QUIT}
+                     or $key eq $ctrl{INTERRUPT}
+                     or $key eq "\n"
+                     or $key eq "\e";
+            }
+            ReadMode 0;
+
+            #
+            if (ord($key)==3)
+            {
+                # Strg-C pressed, reset ID
+                print "STRG-C\n";
+                exit;
+            }
+            elsif (ord($key)==10)
+            {
+                # RETURN pressed, break loop
+                if (defined $id and trackexists($id))
+                {
+                    print "\n";
+                    last;
+                }
+            }
+            elsif (ord($key)==27)
+            {
+                # ESC pressed
+                $command = undef;
+                print "ESC\n";
+                $id = undef;
+                last;
+            }
+            elsif (ord($key)==127)
+            {
+                # DEL pressed, remove last character
+                if (defined $id and length($id))
+                {
+                    #
+                    $id = substr($id,0,length($id)-1);
+                    print chr(0x08) . ' ' . chr(0x08);
+                }
+                $id = undef if $id eq '';
+                redo;
+            }
+            elsif ($key =~ m/\d/)
+            {
+                # Digit
+                chomp($key);
+                $id .= $key;
+                print $key;
+                redo;
+            }
+            else
+            {
+                # Invalid character, do nothing
+                redo;
+            }
+        }
+
+        # Assure that key exists
+        if (not defined $id)
+        {
+            $command = undef;
+            redo READCOM;
+        }
+    }
+
+    #
+    if (lc($command) eq 'add')
+    {
+        print "\n";
+
+        #
+        edit();
+    }
+    elsif (lc($command) eq 'edit')
+    {
+        #
+        edit($id);
+    }
+    elsif (lc($command) eq 'remove')
+    {
+        # Remove element KEY from array
+        splice @{$ref->{chapters}},$id,1;
+
+        #
+        $ismodified = 1;
+    }
+    elsif (lc($command) eq 'save')
+    {
+
+        print "\n";
+
+        # Create backup of original JSON file unless already done
+        if ($needbackup)
+        {
+            move($jsonfile,$jsonfile.'.bak') or die "Failed to create backup: $!";
+            $needbackup = 0;
+        }
+
+        # Encode data to JSON text
+        my $jsontext = $json->encode($ref);
+
+        # Overwrite JSON file with JSON text
+        write_file($jsonfile,$jsontext) or die "Failed to save file: $!";
+
+        # Reset modification flag
+        $ismodified = 0;
+
+        # Write status message
+        printf "File %s successfully created: %d kB written",
+            $jsonfile, stat($jsonfile)->size / 1024;
+
+    }
+    elsif (lc($command) eq 'quit')
+    {
+
+        print "\n";
+
+        # Terminate if not modified yet
+        last unless $ismodified;
+
+        # Confirm quit
+        print "\n" .
+            "WARNING\n" .
+            "All modifications will be lost.  Please confirm [yn] ? ";
+
+        my ($key,$enter);
+        while (not defined $enter)
+        {
+            ReadMode 4;
+            while (not defined ($key = ReadKey(0)))
+            {
+                last if $key eq $ctrl{EOF}
+                     or $key eq $ctrl{EOL}
+                     or $key eq $ctrl{QUIT}
+                     or $key eq $ctrl{INTERRUPT}
+                     or $key eq "\n"
+                     or $key eq "\e";
+            }
+            ReadMode 0;
+
+            if ($key =~ m/^y/i)
+            {
+                # Confirm
+                $enter = 'yes';
+            }
+            else
+            {
+                # Do not confirm
+                $enter = 'no';
+            }
+        }
+
+        # Print response
+        print $enter . "\n";
+
+        # Terminate if confirmation granted
+        last if $enter eq 'yes';
+
+    }
+    else
+    {
+
+        # Raise warning
+        print "Unknown command\n";
+
+    }
+
+    # Reset command
+    $command = undef;
+}
+
+# ------------------------------------------------------------------------------
+
+sub show
+{
+    #
+    my $mxlen_id = 0;
+    my $mxlen_title = 0;
+
+    #
+    foreach my $href (@{$ref->{chapters}})
+    {
+        #
+        $mxlen_id = length($href->{id})
+                 if length($href->{id}) > $mxlen_id;
+
+        #
+        $mxlen_title = length($href->{tags}{title})
+                    if length($href->{tags}{title}) > $mxlen_title;
+
+    }
+
+    printf "\n %" . $mxlen_id . "s  %-" . $mxlen_title . "s %15s %15s %15s\n",
+        'ID', 'TITLE', 'FROM', 'TO', 'LEN';
+
+    #
+    foreach my $href (@{$ref->{chapters}})
+    {
+        #
+        my $base = eval($href->{time_base});
+        my $duration = $href->{end} - $href->{start};
+        #
+        printf "[%".$mxlen_id."d] %-".$mxlen_title."s %15s %15s %15s\n",
+            $href->{id},
+            $href->{tags}{title},
+            value2time($href->{start},$base),
+            value2time($href->{end},$base),
+            value2time($href->{end} - $href->{start},$base),
+    }
+
+    # Check
+    foreach my $href (@{$ref->{chapters}})
+    {
+        #
+        my $hbase  = eval($href->{time_base});
+        my $hstart = $href->{start};
+        my $hend   = $href->{end};
+
+        #
+        next unless defined $hstart and defined $hend;
+
+        #
+        warn sprintf("Invalid time range #%d : %s < %s",
+                        $href->{id}, value2time($hstart,$hbase),
+                                     value2time($hend,$hbase)) unless $hstart <= $hend;
+
+        #
+        foreach my $cref (@{$ref->{chapters}})
+        {
+            #
+            next if $href eq $cref;
+
+            #
+            my $cstart = $cref->{start};
+            my $cend   = $cref->{end};
+
+            next unless defined $cstart and defined $cend;
+
+            warn sprintf("Overlapping time ranges #%d and #%d",
+                            $href->{id}, $cref->{id}) 
+                                if ($hstart < $cstart and $hend > $cstart) or
+                                   ($hstart > $cstart and $cend > $hstart);
+        }
+    }
+}
+
+# ------------------------------------------------------------------------------
+
+sub readstdin
+{
+    #
+    my ($prompt,$default,$allow) = @_;
+    #
+    $prompt = 'User input :' unless defined $prompt;
+    #
+    die "Reference missing" unless defined $ref;
+    #
+    my $enter = $default;
+    #
+    print $prompt, $enter;
+    #
+    $allow = '\w' unless defined $allow;
+    #
+    my ($done,$key);
+    #
+    while (not defined $done)
+    {
+        #
+        ReadMode 4;
+        while (not defined ($key = ReadKey(0)))
+        {
+             last if $key eq $ctrl{EOF}
+                  or $key eq $ctrl{EOL}
+                  or $key eq $ctrl{QUIT}
+                  or $key eq $ctrl{INTERRUPT}
+                  or $key eq "\n"
+                  or $key eq "\e";
+        }
+        ReadMode 0;
+
+        #
+        if (ord($key)==3)
+        {
+            # STRG-C pressed
+            $done = 1;
+            print "\nSTRG-C\n";
+            last;
+        }
+        elsif (ord($key)==10)
+        {
+            # RETURN pressed, break loop
+            $done = 1;
+            print "\n";
+            last;
+        }
+        elsif (ord($key)==27)
+        {
+            # ESC pressed, reset user input
+            if (length($enter)>0)
+            {
+                print '' . ( chr(0x08) . ' ' . chr(0x08) ) x length($enter);
+                $enter = (defined $default) ? $default : '';
+                print $enter;
+                redo;
+            }
+            else
+            {
+                $done = 1;
+                print "\nESC\n";
+                last;
+            }
+        }
+        elsif (ord($key)==127)
+        {
+            # DEL pressed, remove last character
+            if (length($enter)>0)
+            {
+                #
+                $enter = substr($enter,0,length($enter)-1);
+                print chr(0x08) . ' ' . chr(0x08);
+            }
+            redo;
+        }
+        else
+        {
+            if ($key =~ m/$allow/)
+            {
+                # Digit
+                chomp($key);
+                $enter .= $key;
+                print $key;
+                redo;
+            }
+            else
+            {
+                # Invalid character, do nothing
+                redo;
+            }
+        }
+    }
+
+    # Update content of passed variable
+    $_[1] = $enter;
+}
+
+# ------------------------------------------------------------------------------
+
+sub edit
+{
+    #
+    my ($id) = @_;
+
+    #
+    if (not defined $id or $id == -1)
+    {
+        #
+        $id = 1;
+
+        #
+        my @id = tracklist();
+        $id += max(@id) if scalar @id;
+
+        #
+        push @{$ref->{chapters}}, {
+            id         => $id,
+            time_base  => '1/1000',
+            start      => value2time(max_end_time()),
+            end        => undef,
+            start_time => undef,
+            end_time   => undef,
+            tags       => { title => undef },
+        };
+    }
+
+    #
+    my $backup = $ref->{chapters}[$id];
+
+    # Set defaults
+    my $title      = $backup->{tags}{title};
+    my $start_time = $backup->{start_time};
+    my $end_time   = $backup->{end_time};
+
+    # Set start time to latest endtime
+    $start_time = value2time(max_end_time()) unless defined $start_time;
+
+    #
+    printf "\nTRACK %d\n\n", $id;
+
+    # Read user input
+    readstdin("Edit title      : ", $title, '[\w\W]');
+    readstdin("Edit start time : ", $start_time, '[\d\:\.]');
+    readstdin("Edit end time   : ", $end_time, '[\d\:\.+]');
+
+    #
+    if ($end_time =~ m/^\+/)
+    {
+        #
+        my $t1 = time2value($start_time, $ref->{chapters}[$id]{time_base});
+        my $dt = time2value($end_time,   $ref->{chapters}[$id]{time_base});
+        #
+        my $t2 = $t1 + $dt;
+        #
+        $end_time = value2time($t2, $ref->{chapters}[$id]{time_base});
+    }
+
+    # Notify changes
+    $ismodified = 1
+         if $title      ne $backup->{tags}{title} or
+            $start_time ne $backup->{start_time} or
+            $end_time   ne $backup->{end_time};
+
+    # Update track title
+    $ref->{chapters}[$id]{tags}{title} = $title;
+
+    # Update track start time
+    $ref->{chapters}[$id]{start} =
+        time2value($start_time, $ref->{chapters}[$id]{time_base});
+
+    # Update track end time
+    $ref->{chapters}[$id]{end} =
+        time2value($end_time, $ref->{chapters}[$id]{time_base});
+}
+
+# ------------------------------------------------------------------------------
+
+# Fetch all available ID
+sub tracklist
+{
+    my @list = map { $_->{id} if defined $_->{id} } @{$ref->{chapters}};
+    return @list;
+}
+
+# ------------------------------------------------------------------------------
+
+# Check if ID exists
+sub trackexists
+{
+    my $result = 0;
+    if (defined $_[0])
+    {
+        my %id = map { $_ => 1 } tracklist();
+        $result = exists($id{$_[0]});
+    }
+    return $result;
+}
+
+# ------------------------------------------------------------------------------
+
+#
+sub max_end_time
+{
+    my $result = 0;
+    foreach my $href (@{$ref->{chapters}})
+    {
+        #
+        my $totalsecs = $href->{end};
+        $totalsecs *= eval($href->{time_base}) if defined $href->{time_base};
+        #
+        $result = $totalsecs if not defined $result or $totalsecs > $result;
+    }
+    return $result;
+}
+
+# ------------------------------------------------------------------------------
+
+sub value2time
+{
+    #
+    my ($value,$time_base) = @_;
+
+    #
+    my $totalsecs = $value;
+    $totalsecs *= eval($time_base) if defined $time_base;
+
+    #
+    my $hrs = int($totalsecs/3600);
+    my $remainder = $totalsecs % 3600;
+    my $mins = int($remainder/60);
+    my $secs = $totalsecs - $hrs * 3600 - $mins * 60;
+
+    #
+    unless (defined $time_base)
+    {
+        # Auto-detect TIME_BASE
+        $time_base = 1;
+        $remainder = $secs - int($secs);
+        #
+        while ($remainder > 0 and
+               log($time_base)/log(10) > -10 and
+               int(log($time_base)/log(10)) == int(log($remainder)/log(10)))
+        {
+            $time_base /= 10;
+            $remainder = $remainder * 10 - int($remainder * 10);
+        }
+    }
+
+    #
+    my $digs = max(ceil(abs(log(eval($time_base))/log(10))), 3);
+
+    # Build time string
+    my $str = '';
+    $str .= sprintf("%d:",$hrs) if $hrs > 0;
+    $str .= sprintf("%02d:",$mins);
+    $str .= '0' if $secs < 10;
+    $str .= sprintf("%.".$digs."f",$secs);
+
+    # Return time string
+    return $str;
+}
+
+# ------------------------------------------------------------------------------
+
+sub time2value
+{
+    #
+    my ($str,$time_base) = @_;
+
+    $time_base = 1 unless defined $time_base;
+
+    #
+    my ($hrs,$mins,$secs) =
+       ($str =~ m/^(?:($RE{num}{int}):)?(?:($RE{num}{int}):)?($RE{num}{real})$/);
+
+    # Swap hours and minutes if hours are not defined
+    if (defined $hrs and not defined $mins) { $mins = $hrs; $hrs = undef; }
+
+    # Set defaults
+    $hrs  = 0 if not defined $hrs  or $hrs  !~ m/^$RE{num}{int}$/;
+    $mins = 0 if not defined $mins or $mins !~ m/^$RE{num}{int}$/;
+    $secs = 0 if not defined $secs or $secs !~ m/^$RE{num}{real}$/;
+
+    # Return time value
+    return ($hrs*3600+$mins*60+$secs) / eval($time_base);
+}
+
+# ------------------------------------------------------------------------------
+
+__END__
+
+=head1 NAME
+
+=head1 SYNOPSIS
+
+=head1 COMMANDS
+
+=head1 OPTIONS
+
+=head1 DESCRIPTION
+
+=head1 HISTORY
+
+=head1 MIT LICENSE
+
+Copyright 2024 by Matthias Boljen
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+=cut

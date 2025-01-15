@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Created:         So 2023-08-06 01:34:08 CEST
-# Last Modified:   Sa 2024-06-22 18:40:53 CEST
+# Last Modified:   Mi 2025-01-15 19:54:10 CET
 #
 # ffmpeg-convert:
 #   Convert one or several video files
@@ -188,7 +188,7 @@ do
     fi
 
     # Replace file extension
-    OUTFILE="${INFILE%.*}.$EXT"
+    OUTFILE="${INFILE%.*}$NAME.$EXT"
 
     # Add output directory to output filename
     [ $(stat -c "%i" "$DIR") -ne $(stat -c "%i" $(pwd)) ] && OUTFILE="$DIR/$OUTFILE"

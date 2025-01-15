@@ -1,5 +1,5 @@
 NAME=ffmpeg-tools
-VERSION=0.1
+VERSION=0.2
 
 DIRS=bin etc share
 INSTALL_DIRS=`find $(DIRS) -type d 2>/dev/null`
@@ -11,7 +11,7 @@ PKG_NAME=$(NAME)-$(VERSION)
 PREFIX?=/usr/local
 DOC_DIR=$(PREFIX)/share/doc/$(PKG_NAME)
 
-BIN=$(notdir $(wildcard bin/*))
+BIN=$(filter-out ffmpeg-splitaudio-editor,$(notdir $(wildcard bin/*)))
 
 MAN_SECTION ?= 1
 MAN_DIR = share/man/man$(MAN_SECTION)
