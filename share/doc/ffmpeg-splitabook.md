@@ -1,4 +1,4 @@
-# ffmpeg-splitaudio
+# ffmpeg-splitabook
 
 Split monolithic audio book into chapter files
 
@@ -6,7 +6,7 @@ Split monolithic audio book into chapter files
 ## Synopsis
 
 ```console
-$ ffmpeg-splitaudio [OPTION]... INFILE...
+$ ffmpeg-splitabook [OPTION]... INFILE...
 ```
 
 

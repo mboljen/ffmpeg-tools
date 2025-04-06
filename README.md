@@ -8,7 +8,8 @@ This collection provides the following wrappers for **FFmpeg**:
 + [ffmpeg-fadeinout](share/doc/ffmpeg-fadeinout.md)
 + [ffmpeg-gamma](share/doc/ffmpeg-gamma.md)
 + [ffmpeg-offset](share/doc/ffmpeg-offset.md)
-+ [ffmpeg-splitaudio](share/doc/ffmpeg-splitaudio.md)
++ [ffmpeg-splitabook](share/doc/ffmpeg-splitabook.md)
++ [ffmpeg-splitabook-editor](share/doc/ffmpeg-splitabook-editor.md)
 + [ffmpeg-watermark](share/doc/ffmpeg-watermark.md)
 
 
