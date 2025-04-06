@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Created:         Do 2024-08-22 08:27:21 CEST
-# Last Modified:   Sa 2025-01-04 11:52:03 CET
+# Last Modified:   So 2025-03-16 08:14:44 CET
 #
 # ffmpeg-splitabook:
 #    Split an Audible audio book into chapter files
@@ -47,6 +47,15 @@ then
     exit 1
 fi
 
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+EDITOR="$SCRIPT_DIR/ffmpeg-splitabook-editor"
+
+if [ ! -x "$EDITOR" ]
+then
+    echoerr "ffmpeg-splitabook-editor not found, probably not installed"
+    exit 1
+fi
+
 # Defaults
 fetchonly=0
 to=
@@ -83,7 +92,7 @@ do
     # Check if input file exists
     if [ ! -e "$f" ]
     then
-        echoerr "Input file $f does not exist, skipped"
+        echoerr "Input file '$f' does not exist, skipped"
         continue
     fi
 
@@ -93,7 +102,7 @@ do
     # Check file extension
     if [[ "$ext" != "mp3" && "$ext" != "m4a" && "$ext" != "m4b" ]]
     then
-        echoerr "Input file $f has invalid extension, skipped"
+        echoerr "Input file '$f' has invalid extension, skipped"
         continue
     fi
 
@@ -122,7 +131,7 @@ do
     else
 
         # Unsupported target format
-        echoerr "Unsupported extension $to."
+        echoerr "Unsupported extension '$to'."
         exit 1
 
     fi
@@ -131,19 +140,52 @@ do
     if [ ! -e "$chapterdata" ]
     then
 
-        #
+        # Retrieve chapter data
         "$FFPROBE" -i "$f" \
             -print_format json \
             -show_chapters \
             -loglevel error \
             -sexagesimal > "$chapterdata"
 
-        # Check output of FFPROBE, if empty invoke editor to set list manually
-
     fi
+
+    # Check if chapterdata has at least 1 record
+    while (( $(jq -r '.chapters | length' "$chapterdata") == 0 ))
+    do
+
+        # Issue error message
+        echoerr "No records in '$chapterdata'"
+
+        # Extract total track length in seconds
+        total=$(ffprobe -i "$f" -show_entries format=duration -v quiet -of csv="p=0")
+
+        # Get timestamp of chapterdata
+        ts0=$(stat -c %Y "$chapterdata")
+
+        # Invoke editor to modify chapterdata
+        "$EDITOR" --total $total "$chapterdata"
+
+        # Get timestamp of modified chapterdata
+        ts=$(stat -c %Y "$chapterdata")
+
+        # Terminate if chapterdata is unchanged
+        if (( $ts == $ts0 ))
+        then
+            echoerr "File is unchanged, quit"
+            exit 1
+        fi
+
+    done
 
     # Skip rest if fetchonly flag is active
     [ "$fetchonly" -eq 1 ] && continue
+
+    # Skip rest if chapterdata not found
+    if [ ! -e "$chapterdata" ]
+    then
+        echoerr "File '$chapterdata' not found, skipped"
+        continue
+    fi
 
     # Read chapterdata file
     readarray -t id    <<< $(jq -r '.chapters[].id'         "$chapterdata")

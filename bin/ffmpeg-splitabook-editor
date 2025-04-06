@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 #
 # Created:        So 2024-12-15 09:23:41 CET
-# Last Modified:  So 2025-01-05 01:00:43 CET
+# Last Modified:  So 2025-03-16 11:12:35 CET
 #
 # ffmpeg-splitabook-editor:
 #   Create, edit, save JSON tracklist manually
@@ -14,35 +14,45 @@ use File::stat;
 use File::Copy;
 use File::Slurp;
 use Getopt::Long;
-use List::Util qw(min max);
+use List::Util qw(first min max);
 use JSON::PP;
 use Term::ReadKey;
 use Pod::Usage;
 use POSIX;
 use Regexp::Common;
 
-#
-my ($help,$man,$total) = (0,0);
+# Declare options
+my ($help,$man,$time_base0,$total) = (0,0,'1/1000');
 
-#
+# Process options from command line
 GetOptions(
-    'total=s' => \$total,
-    'help|?'  => \$help,
-    'man'     => \$man,
+    'total=s'    => \$total,
+    'timebase=s' => \$time_base0,
+    'help|?'     => \$help,
+    'man'        => \$man,
 ) or pod2usage(2);
 
-#
+# Show help
 pod2usage(1) if $help;
 pod2usage(-exitval => 0, -verbose => 2) if $man;
 
+# Auto-update total time
+my $updatetotal = not defined $total;
+
+# Check time base (allow fractions and float-point numbers)
+die "Invalid time base" unless $time_base0 =~ m/^\d+\/\d+$/ or
+                               $time_base0 =~ m/^$RE{num}{real}$/;
+
+# Check timebase accuracy
+die "Inaccurate time base" if eval($time_base0) < 0 or eval($time_base0) > 1;
+
 #
-my $calctotal = not defined $total;
 my $needbackup = 1;
 my $ismodified = 0;
 my $ref;
 
-#
-$total = time2value($total) unless $calctotal;
+# Convert total time according to time base
+$total = time2value($total,$time_base0) unless $updatetotal;
 
 #
 my $jsonfile = shift @ARGV;
@@ -69,8 +79,8 @@ else
     $ref = { 'chapters' => [] };
 }
 
+#
 my $command;
-
 
 # Get Control characters
 my %ctrl = GetControlChars();
@@ -96,7 +106,7 @@ READCOM: while (not defined $command)
     $id = undef;
 
     #
-    $total = max_end_time() if $calctotal;
+    $total = max_end_time() if $updatetotal;
 
     # Fetch ID list
     my @allow = tracklist();
@@ -106,13 +116,13 @@ READCOM: while (not defined $command)
 
     #
     printf "\n" .
-        "FFMPEG-SPLITAUDIO-EDITOR\n" .
+        "FFMPEG-SPLITABOOK-EDITOR\n" .
         "stats: %d tracks, total time: %s\n\n" .
         " [a] ... add\n" .
         "%s" .
         " [s] ... save\n" .
         " [q] ... quit\n\n",
-            scalar keys @{$ref->{chapters}}, value2time($total),
+            scalar keys @{$ref->{chapters}}, value2time($total, $time_base0),
             scalar @allow > 0 ? " [e] ... edit\n".
                                 " [r] ... remove\n" : "";
 
@@ -181,7 +191,7 @@ READCOM: while (not defined $command)
             elsif (ord($key)==10)
             {
                 # RETURN pressed, break loop
-                if (defined $id and trackexists($id))
+                if (defined $id and trackexists($id-1))
                 {
                     print "\n";
                     last;
@@ -233,20 +243,24 @@ READCOM: while (not defined $command)
     #
     if (lc($command) eq 'add')
     {
+        #
         print "\n";
 
         #
-        edit();
+        edit(-1);
     }
     elsif (lc($command) eq 'edit')
     {
         #
-        edit($id);
+        edit($id-1);
     }
     elsif (lc($command) eq 'remove')
     {
+        # Relocate index of record
+        my $idx = first { $ref->{chapters}[$_]{id} eq $id-1 } 0 .. $#{$ref->{chapters}};
+
         # Remove element KEY from array
-        splice @{$ref->{chapters}},$id,1;
+        splice @{$ref->{chapters}},$idx,1;
 
         #
         $ismodified = 1;
@@ -273,8 +287,8 @@ READCOM: while (not defined $command)
         $ismodified = 0;
 
         # Write status message
-        printf "File %s successfully created: %d kB written",
-            $jsonfile, stat($jsonfile)->size / 1024;
+        printf "\nFile '%s' successfully created: %d bytes written\n",
+            $jsonfile, stat($jsonfile)->size;
 
     }
     elsif (lc($command) eq 'quit')
@@ -340,46 +354,40 @@ READCOM: while (not defined $command)
 
 sub show
 {
-    #
-    my $mxlen_id = 0;
-    my $mxlen_title = 0;
-
-    #
+    # Detect highest track number and longest track title
+    my ($mxlen_id,$mxlen_title) = (0,0);
     foreach my $href (@{$ref->{chapters}})
     {
-        #
-        $mxlen_id = length($href->{id})
-                 if length($href->{id}) > $mxlen_id;
+        # Update track number
+        $mxlen_id = length($href->{id})+1
+                 if length($href->{id})+1 > $mxlen_id+1;
 
-        #
+        # Update length of longest track title
         $mxlen_title = length($href->{tags}{title})
                     if length($href->{tags}{title}) > $mxlen_title;
-
     }
 
-    printf "\n %" . $mxlen_id . "s  %-" . $mxlen_title . "s %15s %15s %15s\n",
-        'ID', 'TITLE', 'FROM', 'TO', 'LEN';
+    # Print header
+    printf "\n  %" . $mxlen_id . "s %-" . $mxlen_title . "s %15s %15s %15s\n",
+        'ID', 'TITLE', 'FROM', 'TO', 'DUR';
 
-    #
-    foreach my $href (@{$ref->{chapters}})
+    # Print list of records
+    foreach my $href (sort { $a->{id} <=> $b->{id} } @{$ref->{chapters}})
     {
-        #
-        my $base = eval($href->{time_base});
-        my $duration = $href->{end} - $href->{start};
-        #
-        printf "[%".$mxlen_id."d] %-".$mxlen_title."s %15s %15s %15s\n",
-            $href->{id},
+        # Print item
+        printf " [%".$mxlen_id."d] %-".$mxlen_title."s %15s %15s %15s\n",
+            $href->{id}+1,
             $href->{tags}{title},
-            value2time($href->{start},$base),
-            value2time($href->{end},$base),
-            value2time($href->{end} - $href->{start},$base),
+            value2time($href->{start},                $href->{time_base}),
+            value2time($href->{end},                  $href->{time_base}),
+            value2time($href->{end} - $href->{start}, $href->{time_base}),
     }
 
-    # Check
+    # Checks
     foreach my $href (@{$ref->{chapters}})
     {
         #
-        my $hbase  = eval($href->{time_base});
+        my $hbase  = $href->{time_base};
         my $hstart = $href->{start};
         my $hend   = $href->{end};
 
@@ -387,9 +395,9 @@ sub show
         next unless defined $hstart and defined $hend;
 
         #
-        warn sprintf("Invalid time range #%d : %s < %s",
-                        $href->{id}, value2time($hstart,$hbase),
-                                     value2time($hend,$hbase)) unless $hstart <= $hend;
+        printf "\nWARNING\nInvalid time range #%d : %s < %s",
+                    $href->{id}, value2time($hstart, $hbase),
+                                 value2time($hend,   $hbase) unless $hstart <= $hend;
 
         #
         foreach my $cref (@{$ref->{chapters}})
@@ -403,10 +411,10 @@ sub show
 
             next unless defined $cstart and defined $cend;
 
-            warn sprintf("Overlapping time ranges #%d and #%d",
-                            $href->{id}, $cref->{id}) 
-                                if ($hstart < $cstart and $hend > $cstart) or
-                                   ($hstart > $cstart and $cend > $hstart);
+            printf "\nWARNING\nOverlapping time ranges #%d and #%d",
+                        $href->{id}, $cref->{id}
+                            if ($hstart < $cstart and $hend > $cstart) or
+                               ($hstart > $cstart and $cend > $hstart);
         }
     }
 }
@@ -418,7 +426,8 @@ sub readstdin
     #
     my ($prompt,$default,$allow) = @_;
     #
-    $prompt = 'User input :' unless defined $prompt;
+    $prompt  = 'User input :' unless defined $prompt;
+    $default = ''             unless defined $default;
     #
     die "Reference missing" unless defined $ref;
     #
@@ -428,9 +437,9 @@ sub readstdin
     #
     $allow = '\w' unless defined $allow;
     #
-    my ($done,$key);
+    my ($result,$key);
     #
-    while (not defined $done)
+    while (not defined $result)
     {
         #
         ReadMode 4;
@@ -449,14 +458,14 @@ sub readstdin
         if (ord($key)==3)
         {
             # STRG-C pressed
-            $done = 1;
+            $result = 2;
             print "\nSTRG-C\n";
             last;
         }
         elsif (ord($key)==10)
         {
             # RETURN pressed, break loop
-            $done = 1;
+            $result = 0;
             print "\n";
             last;
         }
@@ -466,13 +475,12 @@ sub readstdin
             if (length($enter)>0)
             {
                 print '' . ( chr(0x08) . ' ' . chr(0x08) ) x length($enter);
-                $enter = (defined $default) ? $default : '';
-                print $enter;
+                $enter = '';
                 redo;
             }
             else
             {
-                $done = 1;
+                $result = 1;
                 print "\nESC\n";
                 last;
             }
@@ -508,84 +516,117 @@ sub readstdin
 
     # Update content of passed variable
     $_[1] = $enter;
+
+    # Return exit code
+    $result;
 }
 
 # ------------------------------------------------------------------------------
 
 sub edit
 {
-    #
-    my ($id) = @_;
+    # Receive arguments
+    my ($id,$time_base) = @_;
 
-    #
+    # Set timebase to default unless defined
+    $time_base = $time_base0 unless defined $time_base;
+
+    # New record flag
+    my $new = 0;
+
+    # Prepare new record
     if (not defined $id or $id == -1)
     {
-        #
-        $id = 1;
+        # Enable new record flag
+        $new = 1;
 
-        #
+        # Get tracklist
         my @id = tracklist();
-        $id += max(@id) if scalar @id;
 
-        #
+        # Set ID to 0 or last entry
+        $id = (scalar @id > 0) ? max(@id)+1 : 0;
+
+        # Add new record to chapter list
         push @{$ref->{chapters}}, {
             id         => $id,
-            time_base  => '1/1000',
-            start      => value2time(max_end_time()),
+            time_base  => $time_base,
+            start      => max_end_time(),
             end        => undef,
             start_time => undef,
             end_time   => undef,
-            tags       => { title => undef },
+            tags       => { title => '' },
         };
     }
 
-    #
-    my $backup = $ref->{chapters}[$id];
+    # Relocate index of record
+    my $idx = first { $ref->{chapters}[$_]{id} eq $id } 0 .. $#{$ref->{chapters}};
+
+    # Create backup of record
+    my $backup = $ref->{chapters}[$idx];
 
     # Set defaults
     my $title      = $backup->{tags}{title};
     my $start_time = $backup->{start_time};
     my $end_time   = $backup->{end_time};
 
-    # Set start time to latest endtime
-    $start_time = value2time(max_end_time()) unless defined $start_time;
+    # Set start time to latest end time unless defined
+    $start_time = value2time($backup->{start}, $backup->{time_base})
+        unless defined $start_time;
 
     #
-    printf "\nTRACK %d\n\n", $id;
+    print '' . ($new) ? "\nADD TRACK\n\n" : sprintf("\nEDIT TRACK #%d\n\n",$id+1);
 
-    # Read user input
-    readstdin("Edit title      : ", $title, '[\w\W]');
-    readstdin("Edit start time : ", $start_time, '[\d\:\.]');
-    readstdin("Edit end time   : ", $end_time, '[\d\:\.+]');
+    # Read track title
+    if (readstdin("Edit track title : ", $title, '[\w\W]') > 0)
+    {
+        # ESC or STRG-C pressed, remove record if previously added
+        splice @{$ref->{chapters}},$idx,1 if $new;
+        return;
+    }
+
+    # Read start time
+    if (readstdin("Edit start time  : ", $start_time, '[\d\:\.]') > 0)
+    {
+        # ESC or STRG-C pressed, remove record if previously added
+        splice @{$ref->{chapters}},$idx,1 if $new;
+        return;
+    }
+
+    # Set end time to start time unless defined
+    $end_time = $start_time unless defined $end_time;
+
+    # Read end time
+    if (readstdin("Edit end time    : ", $end_time, '[\d\:\.+]') > 0)
+    {
+        # ESC or STRG-C pressed, remove record if previously added
+        splice @{$ref->{chapters}},$idx,1 if $new;
+        return;
+    }
 
     #
     if ($end_time =~ m/^\+/)
     {
         #
-        my $t1 = time2value($start_time, $ref->{chapters}[$id]{time_base});
-        my $dt = time2value($end_time,   $ref->{chapters}[$id]{time_base});
+        my $t1 = time2value($start_time, $backup->{time_base});
+        my $dt = time2value($end_time,   $backup->{time_base});
         #
         my $t2 = $t1 + $dt;
         #
-        $end_time = value2time($t2, $ref->{chapters}[$id]{time_base});
+        $end_time = value2time($t2, $backup->{time_base});
     }
 
     # Notify changes
     $ismodified = 1
-         if $title      ne $backup->{tags}{title} or
-            $start_time ne $backup->{start_time} or
-            $end_time   ne $backup->{end_time};
+         if (defined $backup->{tags}{title} and $backup->{tags}{title} ne $title) or
+            (defined $backup->{start_time}  and $backup->{start_time}  ne $start_time) or
+            (defined $backup->{end_time}    and $backup->{end_time}    ne $end_time);
 
-    # Update track title
-    $ref->{chapters}[$id]{tags}{title} = $title;
+    # Update record
+    $ref->{chapters}[$idx]{tags}{title} = $title;
 
-    # Update track start time
-    $ref->{chapters}[$id]{start} =
-        time2value($start_time, $ref->{chapters}[$id]{time_base});
-
-    # Update track end time
-    $ref->{chapters}[$id]{end} =
-        time2value($end_time, $ref->{chapters}[$id]{time_base});
+    # Update track times
+    $ref->{chapters}[$idx]{start} = time2value($start_time, $backup->{time_base});
+    $ref->{chapters}[$idx]{end}   = time2value($end_time,   $backup->{time_base});
 }
 
 # ------------------------------------------------------------------------------
@@ -621,23 +662,23 @@ sub max_end_time
     {
         #
         my $totalsecs = $href->{end};
-        $totalsecs *= eval($href->{time_base}) if defined $href->{time_base};
         #
         $result = $totalsecs if not defined $result or $totalsecs > $result;
     }
+    #
     return $result;
 }
 
 # ------------------------------------------------------------------------------
 
+# Convert numerical value to time string
 sub value2time
 {
     #
     my ($value,$time_base) = @_;
 
     #
-    my $totalsecs = $value;
-    $totalsecs *= eval($time_base) if defined $time_base;
+    my $totalsecs = $value * eval($time_base);
 
     #
     my $hrs = int($totalsecs/3600);
@@ -677,6 +718,7 @@ sub value2time
 
 # ------------------------------------------------------------------------------
 
+# Convert time string to numerical value
 sub time2value
 {
     #
@@ -696,8 +738,11 @@ sub time2value
     $mins = 0 if not defined $mins or $mins !~ m/^$RE{num}{int}$/;
     $secs = 0 if not defined $secs or $secs !~ m/^$RE{num}{real}$/;
 
+    # Calculate time value and convert to integer
+    my $value = sprintf("%d", ($hrs*3600+$mins*60+$secs) / eval($time_base));
+
     # Return time value
-    return ($hrs*3600+$mins*60+$secs) / eval($time_base);
+    return $value;
 }
 
 # ------------------------------------------------------------------------------
@@ -718,7 +763,7 @@ __END__
 
 =head1 MIT LICENSE
 
-Copyright 2024 by Matthias Boljen
+Copyright 2025 by Matthias Boljen
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
