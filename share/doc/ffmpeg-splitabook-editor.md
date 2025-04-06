@@ -23,7 +23,7 @@ This tool edits the tracklist information required by **ffmpeg-splitabook**.
 
 + `--timebase` TIMEBASE
 
-  Set default timebase in seconds (default: '1/1000').
+  Set default timebase in seconds (default: `1/1000`).
 
 
 ## Contributing
